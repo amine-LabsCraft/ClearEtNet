@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Normalisation · Lab v4</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--surface:#12121a;--card:#1a1a26;--border:#2a2a3f;--a1:#ff3c78;--a2:#00e5ff;--a3:#aaff00;--a4:#ff9d00;--a5:#bf80ff;--text:#e8e8f5;--muted:#6b6b8a;--fm:'Space Mono',monospace;--fd:'Syne',sans-serif;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--fm);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(0,229,255,.06),transparent 70%);pointer-events:none;z-index:0;animation:orb 9s ease-in-out infinite alternate;}
+@keyframes orb{from{transform:translate(0,0) scale(1);}to{transform:translate(120px,80px) scale(1.3);}}
+.ctn{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:40px 24px;}
+header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:60px;gap:20px;flex-wrap:wrap;}
+.logo-area{flex:1;}
+.tag{display:inline-block;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--a2);border:1px solid var(--a2);padding:4px 10px;margin-bottom:16px;}
+h1{font-family:var(--fd);font-size:clamp(36px,6vw,72px);font-weight:800;line-height:.95;letter-spacing:-2px;color:#fff;}
+h1 span{display:block;-webkit-text-stroke:1px var(--a2);-webkit-text-fill-color:transparent;}
+.hdesc{max-width:340px;font-size:11px;color:var(--muted);line-height:1.8;margin-top:20px;}
+
+/* DATA SECTION */
+.dsec{background:var(--card);border:1px solid var(--border);padding:28px;margin-bottom:32px;position:relative;animation:fu .5s ease both;}
+.dsec::before{content:'DATA_INPUT';position:absolute;top:-10px;left:20px;background:var(--bg);color:var(--a2);font-size:10px;letter-spacing:2px;padding:0 8px;}
+
+/* TABS */
+.tabs{display:flex;gap:2px;margin-bottom:20px;}
+.tab{font-family:var(--fm);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:8px 16px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;}
+.tab.active{background:var(--a2);color:var(--bg);border-color:var(--a2);}
+.tab:hover:not(.active){color:var(--a2);border-color:var(--a2);}
+.tpane{display:none;}
+.tpane.active{display:block;}
+
+/* PRESET BUTTONS */
+.presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.btn{font-family:var(--fm);font-size:10px;letter-spacing:1px;padding:7px 13px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.btn:hover{border-color:var(--a2);color:var(--a2);}
+.btn.danger{border-color:var(--a1);color:var(--a1);}
+.btn.danger:hover{background:var(--a1);color:#fff;}
+
+/* INPUTS */
+label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+input[type=text]{font-family:var(--fm);font-size:12px;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:7px 11px;outline:none;transition:border-color .2s;}
+input[type=text]:focus{border-color:var(--a2);}
+textarea{font-family:var(--fm);font-size:12px;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 12px;outline:none;transition:border-color .2s;width:100%;resize:vertical;min-height:90px;line-height:1.6;}
+textarea:focus{border-color:var(--a2);}
+
+/* MANUAL MULTI-COL */
+.col-entries{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+.col-entry{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.col-entry input.cn{width:100px;}
+.col-entry input.cv{flex:1;min-width:200px;}
+.add-col-btn{font-family:var(--fm);font-size:10px;padding:6px 14px;border:1px dashed var(--a3);background:transparent;color:var(--a3);cursor:pointer;transition:all .2s;}
+.add-col-btn:hover{background:var(--a3);color:var(--bg);}
+.del-btn{font-family:var(--fm);font-size:10px;padding:5px 9px;border:1px solid rgba(255,60,120,.4);background:transparent;color:var(--a1);cursor:pointer;}
+
+/* CSV DROP */
+.dropzone{border:2px dashed var(--border);padding:24px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px;}
+.dropzone:hover,.dropzone.drag{border-color:var(--a2);background:rgba(0,229,255,.04);}
+.dropzone p{font-size:11px;color:var(--muted);}
+.dropzone .dzi{font-size:24px;margin-bottom:6px;}
+
+/* COL SELECTOR */
+.col-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.cpill{font-size:10px;letter-spacing:1px;padding:4px 12px;border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.cpill.sel{border-color:var(--a2);color:var(--a2);background:rgba(0,229,255,.06);}
+.cpill:hover:not(.sel){border-color:var(--muted);}
+
+/* DATA TABLE PREVIEW */
+.tbl-wrap{overflow:auto;max-height:180px;margin-top:10px;}
+.dtbl{width:100%;border-collapse:collapse;font-size:11px;}
+.dtbl thead th{background:var(--bg);color:var(--a2);font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:5px 8px;border-bottom:1px solid var(--border);position:sticky;top:0;text-align:left;}
+.dtbl tbody td{padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--a3);}
+.dtbl .idx{color:var(--muted);font-size:9px;}
+
+/* STATS PREVIEW */
+.data-preview{background:var(--surface);border:1px solid var(--border);padding:14px;font-size:11px;max-height:80px;overflow-y:auto;color:var(--a3);white-space:pre-wrap;margin-top:12px;}
+
+/* WARN BOX - for IQR=0 warning */
+.warn-box{display:none;background:rgba(255,157,0,.07);border:1px solid rgba(255,157,0,.35);border-left:2px solid var(--a4);padding:10px 14px;font-size:11px;color:var(--a4);margin-top:10px;}
+
+/* DIAG TRIGGER */
+.diag-trigger{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.diag-trigger-btn{font-family:var(--fm);font-size:11px;letter-spacing:1px;padding:9px 20px;border:1px solid var(--a5);background:transparent;color:var(--a5);cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.diag-trigger-btn:hover{background:var(--a5);color:var(--bg);}
+
+/* METHODS */
+.mgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-bottom:32px;}
+@media(max-width:900px){.mgrid{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:600px){.mgrid{grid-template-columns:1fr 1fr;}}
+.mc{background:var(--card);border:1px solid var(--border);padding:22px 18px;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;animation:fu .5s ease both;}
+.mc:nth-child(1){animation-delay:.1s;--ca:var(--a1);}
+.mc:nth-child(2){animation-delay:.15s;--ca:var(--a2);}
+.mc:nth-child(3){animation-delay:.2s;--ca:var(--a4);}
+.mc:nth-child(4){animation-delay:.25s;--ca:var(--a5);}
+.mc:nth-child(5){animation-delay:.3s;--ca:var(--a3);}
+.mc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--ca);transform:scaleX(0);transition:transform .3s;}
+.mc:hover::after,.mc.sel::after{transform:scaleX(1);}
+.mc:hover,.mc.sel{border-color:var(--ca);}
+.mc.sel{background:rgba(255,255,255,.03);}
+.mnum{font-size:40px;font-family:var(--fd);font-weight:800;color:var(--ca);opacity:.15;position:absolute;top:6px;right:12px;line-height:1;}
+.mname{font-family:var(--fd);font-size:14px;font-weight:700;margin-bottom:8px;color:#fff;line-height:1.2;}
+.mfml{font-size:9px;color:var(--ca);background:rgba(255,255,255,.03);padding:5px 8px;margin-bottom:10px;border-left:2px solid var(--ca);font-family:var(--fm);word-break:break-all;}
+.mdsc{font-size:10px;color:var(--muted);line-height:1.6;}
+.rbadge{display:inline-block;font-size:9px;letter-spacing:1px;padding:2px 8px;border:1px solid var(--ca);color:var(--ca);margin-top:10px;text-transform:uppercase;}
+
+/* CONTROLS */
+.ctrl{display:flex;gap:16px;align-items:center;margin-bottom:32px;flex-wrap:wrap;background:var(--card);border:1px solid var(--border);padding:20px;position:relative;}
+.ctrl::before{content:'COMPUTE';position:absolute;top:-10px;left:20px;background:var(--bg);color:var(--a3);font-size:10px;letter-spacing:2px;padding:0 8px;}
+.asel{display:flex;gap:2px;}
+.abtn{font-family:var(--fm);font-size:10px;letter-spacing:1px;padding:8px 14px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;text-transform:uppercase;transition:all .2s;}
+.abtn.active{background:var(--a3);color:var(--bg);border-color:var(--a3);}
+.abtn:hover:not(.active){color:var(--a3);border-color:var(--a3);}
+.psel{display:none;align-items:center;gap:12px;}
+.psel.v{display:flex;}
+.sep{width:1px;height:32px;background:var(--border);}
+.runbtn{font-family:var(--fd);font-size:14px;font-weight:700;padding:12px 32px;background:var(--a2);border:none;color:var(--bg);cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all .2s;margin-left:auto;position:relative;overflow:hidden;}
+.runbtn:hover{box-shadow:0 0 24px rgba(0,229,255,.4);}
+.cmpbtn{font-family:var(--fm);font-size:10px;letter-spacing:1px;padding:8px 16px;border:1px solid var(--a5);background:transparent;color:var(--a5);cursor:pointer;text-transform:uppercase;transition:all .2s;}
+.cmpbtn:hover{background:var(--a5);color:var(--bg);}
+
+/* RESULTS */
+.res{display:none;animation:fu .4s ease;}
+.res.on{display:block;}
+.rhead{display:flex;align-items:center;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
+.rtitle{font-family:var(--fd);font-size:24px;font-weight:800;color:#fff;}
+.rbg{font-size:10px;letter-spacing:2px;padding:4px 12px;background:var(--a3);color:var(--bg);font-weight:700;}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+@media(max-width:700px){.sgrid{grid-template-columns:1fr;}}
+.spnl{background:var(--card);border:1px solid var(--border);padding:24px;position:relative;}
+.spnl.before::before{content:'AVANT';position:absolute;top:-10px;left:20px;background:var(--bg);color:var(--a4);font-size:10px;letter-spacing:2px;padding:0 8px;}
+.spnl.after::before{content:'APRES';position:absolute;top:-10px;left:20px;background:var(--bg);color:var(--a3);font-size:10px;letter-spacing:2px;padding:0 8px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{text-align:left;padding:6px 10px;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.03);}
+tr:last-child td{border-bottom:none;}
+.csec{background:var(--card);border:1px solid var(--border);padding:28px;position:relative;margin-bottom:24px;}
+.csec::before{content:'VISUALISATION';position:absolute;top:-10px;left:20px;background:var(--bg);color:var(--a1);font-size:10px;letter-spacing:2px;padding:0 8px;}
+.cwrap{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:600px){.cwrap{grid-template-columns:1fr;}}
+canvas{width:100%!important;max-height:200px;}
+.vrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.vb{font-size:10px;letter-spacing:1px;padding:4px 10px;border:1px solid var(--a3);color:var(--a3);}
+.vb.w{border-color:var(--a4);color:var(--a4);}
+.vb.i{border-color:var(--a2);color:var(--a2);}
+.cmpa{background:var(--card);border:1px solid var(--border);padding:28px;position:relative;margin-top:24px;}
+.cmpa::before{content:'COMPARAISON_TOUTES_METHODES';position:absolute;top:-10px;left:20px;background:var(--bg);color:var(--a5);font-size:10px;letter-spacing:2px;padding:0 8px;}
+.cmpg{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:16px;}
+@media(max-width:900px){.cmpg{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:600px){.cmpg{grid-template-columns:1fr 1fr;}}
+.cmpc{background:var(--surface);border:1px solid var(--border);padding:14px;text-align:center;}
+.cmpt{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.cmpv{font-family:var(--fd);font-size:18px;font-weight:800;color:#fff;margin-bottom:4px;}
+.cmps{font-size:9px;color:var(--muted);}
+.igrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:24px;}
+@media(max-width:700px){.igrid{grid-template-columns:1fr;}}
+.ibox{background:var(--surface);border:1px solid var(--border);padding:16px;}
+.ibt{font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+.ibt.g{color:var(--a3);}.ibt.r{color:var(--a1);}.ibt.b{color:var(--a2);}
+.ilist{list-style:none;}
+.ilist li{font-size:11px;color:var(--muted);padding:3px 0;line-height:1.6;}
+.ilist li::before{content:'> ';color:var(--a2);}
+
+/* DIAGNOSTIC */
+.dw{display:none;margin-bottom:32px;animation:fu .5s ease both;}
+.dw.on{display:block;}
+.dtop{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+.dhero{background:linear-gradient(135deg,rgba(170,255,0,.07),rgba(0,229,255,.04));border:1px solid rgba(170,255,0,.3);padding:28px;position:relative;margin-bottom:16px;overflow:hidden;}
+.dhero::before{content:'RECOMMANDE';position:absolute;top:14px;right:18px;font-size:9px;letter-spacing:3px;color:var(--a3);}
+.dhm{font-family:var(--fd);font-size:34px;font-weight:800;color:var(--a3);letter-spacing:-1px;margin-bottom:6px;}
+.dhf{font-size:10px;color:rgba(170,255,0,.6);margin-bottom:14px;}
+.dhr{font-size:12px;color:var(--text);line-height:1.9;max-width:820px;}
+.dhs{position:absolute;bottom:14px;right:18px;font-family:var(--fd);font-size:44px;font-weight:800;color:rgba(170,255,0,.1);}
+.dscores{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px;}
+@media(max-width:900px){.dscores{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:600px){.dscores{grid-template-columns:1fr 1fr;}}
+.dsc{background:var(--card);border:1px solid var(--border);padding:14px;transition:all .3s;}
+.dsc.win{border-color:var(--a3);background:rgba(170,255,0,.04);}
+.dsn{font-family:var(--fd);font-size:11px;font-weight:700;color:#fff;margin-bottom:8px;}
+.dsbw{background:var(--surface);height:5px;margin-bottom:6px;overflow:hidden;}
+.dsb{height:100%;transition:width 1s ease;}
+.dsnum{font-size:15px;font-family:var(--fd);font-weight:800;color:#fff;}
+.dssub{font-size:9px;color:var(--muted);margin-top:2px;line-height:1.4;}
+.dtree{background:var(--surface);border:1px solid var(--border);padding:18px;margin-bottom:16px;}
+.dtt{font-size:9px;letter-spacing:2px;color:var(--a5);text-transform:uppercase;margin-bottom:14px;}
+.dstep{display:flex;align-items:flex-start;gap:10px;padding:8px 0;position:relative;}
+.dstep:not(:last-child)::after{content:'';position:absolute;left:13px;top:32px;width:1px;height:calc(100% - 10px);background:var(--border);}
+.ddot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;border:1px solid;}
+.ddq{background:rgba(0,229,255,.08);border-color:var(--a2);color:var(--a2);}
+.ddy{background:rgba(170,255,0,.08);border-color:var(--a3);color:var(--a3);}
+.ddn{background:rgba(255,157,0,.08);border-color:var(--a4);color:var(--a4);}
+.dde{background:rgba(170,255,0,.15);border-color:var(--a3);color:var(--a3);}
+.dsc2{flex:1;}
+.dsq{font-size:11px;color:var(--text);line-height:1.5;}
+.dsa{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.6;}
+.dagrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+@media(max-width:700px){.dagrid{grid-template-columns:1fr;}}
+.dac{background:var(--card);border:1px solid var(--border);padding:16px;}
+.dat{font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
+.dat.or{color:var(--a4);}.dat.bl{color:var(--a2);}.dat.pi{color:var(--a1);}.dat.pu{color:var(--a5);}
+.dr{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03);}
+.dr:last-child{border-bottom:none;}
+.drl{font-size:10px;color:var(--muted);}
+.drv{font-size:11px;color:var(--text);}
+.dtag{font-size:8px;letter-spacing:1px;padding:2px 6px;text-transform:uppercase;}
+.tok{background:rgba(170,255,0,.12);color:var(--a3);border:1px solid rgba(170,255,0,.3);}
+.twarn{background:rgba(255,157,0,.1);color:var(--a4);border:1px solid rgba(255,157,0,.3);}
+.tbad{background:rgba(255,60,120,.1);color:var(--a1);border:1px solid rgba(255,60,120,.3);}
+.tinf{background:rgba(0,229,255,.08);color:var(--a2);border:1px solid rgba(0,229,255,.2);}
+.wng{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;}
+@media(max-width:900px){.wng{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:600px){.wng{grid-template-columns:1fr;}}
+.wnc{background:var(--card);border:1px solid var(--border);padding:14px;opacity:.85;}
+.wnn{font-size:12px;font-weight:700;margin-bottom:6px;}
+.wnr{font-size:10px;color:var(--muted);line-height:1.7;}
+.dapply{font-family:var(--fd);font-size:14px;font-weight:700;padding:12px 28px;background:var(--a3);border:none;color:#0a0a0f;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all .2s;}
+.dapply:hover{box-shadow:0 0 20px rgba(170,255,0,.4);}
+@keyframes fu{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:var(--surface);}::-webkit-scrollbar-thumb{background:var(--border);}::-webkit-scrollbar-thumb:hover{background:var(--a2);}
+</style>
+</head>
+<body>
+<div class="ctn">
+<header>
+  <div class="logo-area">
+    <div class="tag">v4.0 · Multi-Input + Diagnostic</div>
+    <h1>Normal<span>isation</span></h1>
+    <p class="hdesc">Import CSV, saisie manuelle, coller un tableau<br>Diagnostic intelligent · 5 methodes · 3 approches</p>
+  </div>
+</header>
+
+<!-- DATA INPUT -->
+<div class="dsec">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab(this,'list')">Liste</button>
+    <button class="tab" onclick="switchTab(this,'manual')">Colonnes manuelles</button>
+    <button class="tab" onclick="switchTab(this,'csv')">Import CSV</button>
+    <button class="tab" onclick="switchTab(this,'paste')">Coller tableau</button>
+  </div>
+
+  <!-- TAB: LIST -->
+  <div class="tpane active" id="tab-list">
+    <div class="presets">
+      <button class="btn" onclick="loadPreset('linear')">Lineaire</button>
+      <button class="btn" onclick="loadPreset('neg')">Avec negatifs</button>
+      <button class="btn" onclick="loadPreset('outlier')">Avec outlier</button>
+      <button class="btn" onclick="loadPreset('exp')">Exponentielle</button>
+      <button class="btn" onclick="loadPreset('rand')">Aleatoire</button>
+      <div style="flex:1"></div>
+      <button class="btn danger" onclick="clearAll()">Reset</button>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+      <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
+        <label>Donnees (separees par virgule)</label>
+        <input type="text" id="listInput" value="10, 20, 30, 40, 50, 60, 70, 80, 90, 100" style="width:100%;" oninput="listChanged()">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label>Nom colonne</label>
+        <input type="text" id="listColName" value="X" style="width:80px;" oninput="listChanged()">
+      </div>
+    </div>
+    <div class="data-preview" id="listPreview"></div>
+  </div>
+
+  <!-- TAB: MANUAL MULTI-COL -->
+  <div class="tpane" id="tab-manual">
+    <div class="col-entries" id="colEntries"></div>
+    <button class="add-col-btn" onclick="addColEntry()">+ Ajouter une colonne</button>
+    <div class="col-pills" id="manualPills" style="margin-top:14px;"></div>
+    <div class="data-preview" id="manualPreview" style="margin-top:8px;"></div>
+  </div>
+
+  <!-- TAB: CSV IMPORT -->
+  <div class="tpane" id="tab-csv">
+    <div class="dropzone" id="dropzone" onclick="document.getElementById('csvFile').click()" ondragover="dzDrag(event,true)" ondragleave="dzDrag(event,false)" ondrop="dzDrop(event)">
+      <div class="dzi">CSV</div>
+      <p>Cliquez ou glissez un fichier .csv ici</p>
+      <p style="margin-top:4px;font-size:10px;color:var(--a2);">Premiere ligne = noms de colonnes</p>
+    </div>
+    <input type="file" id="csvFile" accept=".csv,.txt" style="display:none;" onchange="csvFileLoad(this)">
+    <div id="csvTableWrap" style="display:none;">
+      <div class="col-pills" id="csvPills"></div>
+      <div class="tbl-wrap"><table class="dtbl" id="csvTable"></table></div>
+      <div class="data-preview" id="csvPreview" style="margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <!-- TAB: PASTE -->
+  <!-- FIX #12: removed onpaste="pasteParsed()" to avoid double-fire.
+       oninput alone handles all cases (paste, type, cut). -->
+  <div class="tpane" id="tab-paste">
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
+      <label>Coller un tableau (Excel, Google Sheets, LibreOffice)</label>
+      <textarea id="pasteArea"
+        placeholder="Copiez le tableau depuis Excel et collez ici (Ctrl+V)&#10;La premiere ligne sera traitee comme en-tete de colonnes"
+        oninput="debouncedPasteInput()"></textarea>
+    </div>
+    <div id="pasteTableWrap" style="display:none;">
+      <div class="col-pills" id="pastePills"></div>
+      <div class="tbl-wrap"><table class="dtbl" id="pasteTable"></table></div>
+      <div class="data-preview" id="pastePreview" style="margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <!-- IQR=0 warning shown when Robust selected on flat data -->
+  <div class="warn-box" id="robustWarnBox">
+    &#9888; IQR = 0 pour cette colonne. Robust utilise l'ecart-type comme fallback.
+  </div>
+
+  <!-- DIAG TRIGGER -->
+  <div class="diag-trigger">
+    <button class="diag-trigger-btn" onclick="runDiagnostic()">Diagnostic automatique</button>
+    <span style="font-size:10px;color:var(--muted);">Analyse et recommande la meilleure methode de normalisation</span>
+  </div>
+</div>
+
+<!-- DIAGNOSTIC PANEL -->
+<div class="dw" id="diagWrapper">
+  <div class="dtop">
+    <div>
+      <div style="font-size:9px;letter-spacing:3px;color:var(--a5);text-transform:uppercase;margin-bottom:4px;">DIAGNOSTIC_AUTO</div>
+      <div style="font-family:var(--fd);font-size:22px;font-weight:800;color:#fff;">Analyse de vos donnees</div>
+    </div>
+    <button class="diag-trigger-btn" onclick="closeDiag()">Fermer</button>
+  </div>
+  <div class="dhero">
+    <div class="dhm" id="dHM"></div>
+    <div class="dhf" id="dHF"></div>
+    <div class="dhr" id="dHR"></div>
+    <div class="dhs" id="dHS"></div>
+  </div>
+  <div style="font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;">Score de compatibilite par methode</div>
+  <div class="dscores" id="diagScores"></div>
+  <div class="dtree">
+    <div class="dtt">Arbre de decision</div>
+    <div id="dtreeFlow"></div>
+  </div>
+  <div style="font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;">Analyse statistique detaillee</div>
+  <div class="dagrid" id="diagAnalysis"></div>
+  <div style="font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;">Pourquoi pas les autres methodes ?</div>
+  <div class="wng" id="diagWhyNot"></div>
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border);">
+    <button class="dapply" onclick="applyDiagnostic()">Appliquer et Executer</button>
+    <span style="font-size:10px;color:var(--muted);">Selectionne la methode recommandee et lance le calcul</span>
+  </div>
+</div>
+
+<!-- METHODS -->
+<div class="mgrid">
+  <div class="mc sel" onclick="selMethod(this,'1')"><div class="mnum">01</div><div class="mname">Min-Max</div><div class="mfml">X = (X-min)/(max-min)</div><div class="mdsc">Met a l'echelle dans un intervalle fixe.</div><span class="rbadge">[0, 1]</span></div>
+  <div class="mc" onclick="selMethod(this,'2')"><div class="mnum">02</div><div class="mname">MaxAbs</div><div class="mfml">X = X / max|X|</div><div class="mdsc">Normalise par la valeur absolue max. Preserve le signe.</div><span class="rbadge">[-1, 1]</span></div>
+  <div class="mc" onclick="selMethod(this,'3')"><div class="mnum">03</div><div class="mname">Robust</div><div class="mfml">X = (X-mediane)/IQR</div><div class="mdsc">Resistante aux outliers grace a la mediane et IQR.</div><span class="rbadge">Non borne</span></div>
+  <div class="mc" onclick="selMethod(this,'4')"><div class="mnum">04</div><div class="mname">Quantile</div><div class="mfml">X = G^-1(F(X))</div><div class="mdsc">Transforme pour suivre une distribution cible.</div><span class="rbadge">Uniforme/Normal</span></div>
+  <div class="mc" onclick="selMethod(this,'5')"><div class="mnum">05</div><div class="mname">Decimal Scaling</div><div class="mfml">X = X / 10^k</div><div class="mdsc">Decale la virgule selon la magnitude.</div><span class="rbadge">[-1, 1]</span></div>
+</div>
+
+<!-- CONTROLS -->
+<div class="ctrl">
+  <div>
+    <label style="display:block;margin-bottom:8px;">Approche</label>
+    <div class="asel">
+      <button class="abtn active" onclick="selAppr(this,'manual')">Manuel</button>
+      <button class="abtn" onclick="selAppr(this,'pandas')">Pandas</button>
+      <button class="abtn" onclick="selAppr(this,'sklearn')">Sklearn</button>
+    </div>
+  </div>
+  <div class="sep" id="sep1" style="display:none"></div>
+  <div class="psel" id="rangeSelector">
+    <label>Intervalle cible</label>
+    <div class="asel">
+      <button class="abtn active" onclick="selRange(this,'01')">[ 0, 1 ]</button>
+      <button class="abtn" onclick="selRange(this,'11')">[ -1, 1 ]</button>
+    </div>
+  </div>
+  <div class="sep" id="sep2" style="display:none"></div>
+  <div class="psel" id="distSelector">
+    <label>Distribution</label>
+    <div class="asel">
+      <button class="abtn active" onclick="selDist(this,'uniform')">Uniforme</button>
+      <button class="abtn" onclick="selDist(this,'normal')">Normale</button>
+    </div>
+  </div>
+  <div class="sep"></div>
+  <button class="cmpbtn" onclick="compareAll()">Comparer tout</button>
+  <button class="runbtn" id="runBtn" onclick="compute()">EXECUTER</button>
+</div>
+
+<!-- RESULTS -->
+<div class="res" id="results">
+  <div class="rhead">
+    <div class="rtitle">Resultats</div>
+    <div class="rbg" id="mBadge">MIN-MAX</div>
+    <div class="rbg" style="background:var(--a2);color:var(--bg)" id="aBadge">MANUEL</div>
+    <div class="rbg" style="background:var(--a5);color:var(--bg);cursor:pointer;" id="colBadge" onclick="exportCSV()">Exporter CSV</div>
+  </div>
+  <div class="sgrid">
+    <div class="spnl before"><table id="tAvant"></table></div>
+    <div class="spnl after"><table id="tApres"></table></div>
+  </div>
+  <div class="vrow" id="verifyRow"></div>
+  <div class="csec" style="margin-top:24px;">
+    <div class="cwrap">
+      <div><p style="font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:12px;text-transform:uppercase">Distribution Avant</p><canvas id="chartAvant"></canvas></div>
+      <div><p style="font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:12px;text-transform:uppercase">Distribution Apres</p><canvas id="chartApres"></canvas></div>
+    </div>
+  </div>
+  <div class="igrid" id="infoGrid"></div>
+  <div class="cmpa" id="compareArea" style="display:none;">
+    <p style="font-size:11px;color:var(--muted);margin-bottom:4px;">Resume de toutes les methodes :</p>
+    <div class="cmpg" id="compareGrid"></div>
+  </div>
+</div>
+
+</div><!-- .ctn -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════════ */
+var SM='1', SA='manual', SR='01', SD='uniform';
+var CA=null, CB=null;
+var activeTab='list';
+var _pasteTimer=null; /* FIX #12 debounce timer */
+
+/* FIX #11: each tab tracks its own selected column index inside tabData.
+   No more shared global activeCol that bleeds across tabs. */
+var tabData={
+  list:  {cols:[{name:'X',vals:[10,20,30,40,50,60,70,80,90,100]}], selCol:0},
+  manual:{cols:[], selCol:0},
+  csv:   {cols:[], selCol:0},
+  paste: {cols:[], selCol:0}
+};
+
+/* FIX #15: export state updated by compute(), not by compareAll() */
+var _exportArr=null, _exportTrans=null, _exportMethod='';
+
+var MN={'1':'MIN-MAX','2':'MAX-ABS','3':'ROBUST','4':'QUANTILE','5':'DECIMAL SCALING'};
+var MFull={'1':'Min-Max','2':'MaxAbs','3':'Robust','4':'Quantile','5':'Decimal Scaling'};
+var MFormula={'1':'X=(X-min)/(max-min)','2':'X=X/max|X|','3':'X=(X-mediane)/IQR','4':'X=G^-1(F(X))','5':'X=X/10^k'};
+var MCol={'1':'var(--a1)','2':'var(--a2)','3':'var(--a4)','4':'var(--a5)','5':'var(--a3)'};
+
+var MI={
+  '1':{uc:['KNN, K-means','Reseaux de neurones','Traitement images','Donnees a bornes connues'],
+       pros:['Borne [0,1]','Preserve distribution','Simple a interpreter'],
+       cons:['Sensible aux outliers','Hors intervalle problematique','Distributions asymetriques']},
+  '2':{uc:['Donnees centrees autour de 0','Valeurs negatives','Sparse data','Algo sensibles au signe'],
+       pros:['Preserve le signe','Borne [-1,1]','Ideal pour donnees centrees'],
+       cons:['Sensible aux outliers','Suppose 0 est le centre','Moins connu']},
+  '3':{uc:['Donnees avec outliers','Distributions asymetriques','Donnees financieres','Capteurs aberrants'],
+       pros:['Robuste aux extremes','Pas hypothese distribution','Mediane stable'],
+       cons:['Non borne','Moins standard','IQR peut etre nul']},
+  '4':{uc:['Donnees non-normales','Distribution specifique','Eliminer effets echelle','Bio/RNA-seq'],
+       pros:['Uniforme ou normale','Robuste outliers','Compare distributions'],
+       cons:['Perd forme originale','Complexe a interpreter','Artefacts possibles']},
+  '5':{uc:['Grandes magnitudes','Pre-traitement rapide','Pas d\'outliers'],
+       pros:['Tres simple','Preserve relations','Intuitif'],
+       cons:['Arbitraire base 10','Pas optimal','Rarement utilise']}
+};
+
+/* ═══ TAB SWITCHING ═══ */
+function switchTab(el,name){
+  var tabs=document.querySelectorAll('.tab');
+  var panes=document.querySelectorAll('.tpane');
+  for(var i=0;i<tabs.length;i++) tabs[i].classList.remove('active');
+  for(var j=0;j<panes.length;j++) panes[j].classList.remove('active');
+  el.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  activeTab=name;
+  if(name==='manual'&&tabData.manual.cols.length===0) initManualCols();
+}
+
+/* ═══ PARSE DATA — returns active column values ═══
+   FIX #11: each tab reads from tabData[tab].selCol, not global activeCol */
+function parseData(){
+  var td=tabData[activeTab];
+  if(!td||!td.cols.length) return [];
+  var col=td.cols[td.selCol];
+  return col?col.vals.slice():[];
+}
+
+function getActiveColName(){
+  var td=tabData[activeTab];
+  if(!td||!td.cols.length) return 'X';
+  var col=td.cols[td.selCol];
+  return col?col.name:'X';
+}
+
+/* ═══ LIST TAB ═══ */
+function loadPreset(k){
+  var presets={
+    linear:'10, 20, 30, 40, 50, 60, 70, 80, 90, 100',
+    neg:'-5, -3, 0, 2, 5, 7, 10, 12, 15, 18',
+    outlier:'10, 20, 30, 40, 50, 60, 70, 80, 90, 1000',
+    exp:'1, 2, 4, 8, 16, 32, 64, 128, 256, 512',
+    rand:''
+  };
+  if(k==='rand'){var a=[];for(var i=0;i<12;i++)a.push(Math.round(Math.random()*220-40));presets.rand=a.join(', ');}
+  document.getElementById('listInput').value=presets[k];
+  listChanged();
+}
+
+function clearAll(){
+  if(activeTab==='list'){document.getElementById('listInput').value='';listChanged();}
+  else if(activeTab==='manual'){tabData.manual.cols=[];tabData.manual.selCol=0;initManualCols();}
+  else if(activeTab==='csv'){tabData.csv.cols=[];tabData.csv.selCol=0;document.getElementById('csvTableWrap').style.display='none';}
+  else if(activeTab==='paste'){tabData.paste.cols=[];tabData.paste.selCol=0;document.getElementById('pasteArea').value='';document.getElementById('pasteTableWrap').style.display='none';}
+}
+
+function listChanged(){
+  var raw=document.getElementById('listInput').value.split(',');
+  var vals=[];
+  for(var i=0;i<raw.length;i++){var v=parseFloat(raw[i].trim());if(!isNaN(v))vals.push(v);}
+  tabData.list.cols[0].vals=vals;
+  tabData.list.cols[0].name=document.getElementById('listColName').value||'X';
+  showListPreview(vals);
+}
+
+function showListPreview(vals){
+  var el=document.getElementById('listPreview');
+  if(!vals.length){el.textContent='Aucune donnee valide';return;}
+  var s=calcStats(vals);
+  el.textContent='['+vals.map(function(v){return v.toFixed(1);}).join(', ')+']\nn='+s.n+'  mu='+s.mean.toFixed(3)+'  sigma='+s.std.toFixed(3)+'  min='+s.min+'  max='+s.max+'  outliers='+s.outlierCount;
+}
+
+/* ═══ MANUAL MULTI-COL TAB ═══
+   FIX #11: use tabData.manual.selCol, not global activeCol
+   FIX #13: addColEntry uses idx%26 — no crash past 26 columns
+   FIX #14: delManualCol clamps selCol to Math.max(0, length-1) */
+function initManualCols(){
+  tabData.manual.cols=[{name:'Col_A',vals:[]},{name:'Col_B',vals:[]}];
+  tabData.manual.selCol=0;
+  renderManualCols();
+}
+
+function addColEntry(){
+  var idx=tabData.manual.cols.length;
+  /* FIX #13: modulo 26 so char codes stay in A-Z range */
+  tabData.manual.cols.push({name:'Col_'+String.fromCharCode(65+(idx%26)),vals:[]});
+  renderManualCols();
+}
+
+function delManualCol(idx){
+  tabData.manual.cols.splice(idx,1);
+  /* FIX #14: safe clamp — never -1 */
+  var len=tabData.manual.cols.length;
+  if(len===0){tabData.manual.selCol=0;}
+  else{tabData.manual.selCol=Math.min(tabData.manual.selCol,len-1);}
+  renderManualCols();
+}
+
+function renderManualCols(){
+  var ce=document.getElementById('colEntries');
+  ce.innerHTML='';
+  for(var i=0;i<tabData.manual.cols.length;i++){
+    (function(idx){
+      var col=tabData.manual.cols[idx];
+      var row=document.createElement('div');
+      row.className='col-entry';
+      row.innerHTML='<input type="text" class="cn" value="'+col.name+'" placeholder="Nom">'+
+        '<input type="text" class="cv" value="'+(col.vals.join(', '))+'" placeholder="10, 20, 30...">'+
+        (tabData.manual.cols.length>1?'<button class="del-btn" onclick="delManualCol('+idx+')">X</button>':'');
+      row.querySelectorAll('input')[0].onchange=function(){tabData.manual.cols[idx].name=this.value;renderManualPills();};
+      row.querySelectorAll('input')[1].oninput=function(){
+        var r=this.value.split(',');var v=[];
+        for(var k=0;k<r.length;k++){var n=parseFloat(r[k].trim());if(!isNaN(n))v.push(n);}
+        tabData.manual.cols[idx].vals=v;
+        /* FIX #11: compare against tabData.manual.selCol */
+        if(tabData.manual.selCol===idx) showManualPreview();
+      };
+      ce.appendChild(row);
+    })(i);
+  }
+  renderManualPills();
+}
+
+function renderManualPills(){
+  /* FIX #11: use tabData.manual.selCol */
+  var el=document.getElementById('manualPills');
+  el.innerHTML='';
+  for(var i=0;i<tabData.manual.cols.length;i++){
+    (function(idx){
+      var p=document.createElement('div');
+      p.className='cpill'+(idx===tabData.manual.selCol?' sel':'');
+      p.textContent=tabData.manual.cols[idx].name||('Col '+idx);
+      p.onclick=function(){tabData.manual.selCol=idx;renderManualPills();showManualPreview();};
+      el.appendChild(p);
+    })(i);
+  }
+  showManualPreview();
+}
+
+function showManualPreview(){
+  var el=document.getElementById('manualPreview');
+  var col=tabData.manual.cols[tabData.manual.selCol];
+  if(!col||!col.vals.length){el.textContent='Aucune donnee';return;}
+  var s=calcStats(col.vals);
+  el.textContent='Colonne: '+col.name+'\n['+col.vals.slice(0,12).join(', ')+(col.vals.length>12?'...':'')+'] n='+s.n+'  mu='+s.mean.toFixed(3)+'  sigma='+s.std.toFixed(3);
+}
+
+/* ═══ CSV TAB ═══
+   FIX #20: detect TAB separator before ; and , */
+function dzDrag(e,on){e.preventDefault();document.getElementById('dropzone').classList[on?'add':'remove']('drag');}
+function dzDrop(e){e.preventDefault();document.getElementById('dropzone').classList.remove('drag');if(e.dataTransfer.files[0])readCSVFile(e.dataTransfer.files[0]);}
+function csvFileLoad(inp){if(inp.files[0])readCSVFile(inp.files[0]);}
+
+function readCSVFile(file){
+  var reader=new FileReader();
+  reader.onload=function(e){parseCSV(e.target.result);};
+  reader.readAsText(file,'UTF-8');
+}
+
+/* FIX #20: shared separator detection — TAB first, then ; then , */
+function detectSep(text){
+  if(text.indexOf('\t')>-1) return '\t';
+  if(text.indexOf(';')>-1) return ';';
+  return ',';
+}
+
+function parseCSV(text){
+  var lines=text.trim().split('\n');
+  if(lines.length<2){alert('CSV doit avoir au moins 2 lignes.');return;}
+  var sep=detectSep(text); /* FIX #20 */
+  var headers=lines[0].split(sep).map(function(h){return h.trim().replace(/^["']|["']$/g,'');});
+  var cols=[];
+  for(var h=0;h<headers.length;h++){cols.push({name:headers[h]||('Col'+h),vals:[]});}
+  for(var r=1;r<lines.length;r++){
+    if(!lines[r].trim()) continue;
+    var cells=lines[r].split(sep);
+    for(var c=0;c<headers.length;c++){
+      var v=parseFloat((cells[c]||'').trim().replace(',','.'));
+      if(!isNaN(v)) cols[c].vals.push(v);
+    }
+  }
+  var numCols=[];
+  for(var i=0;i<cols.length;i++) if(cols[i].vals.length>0) numCols.push(cols[i]);
+  if(!numCols.length){alert('Aucune colonne numerique trouvee.');return;}
+  tabData.csv.cols=numCols;
+  tabData.csv.selCol=0;
+  /* FIX #8: renderDataTable now builds correct <thead><tr><th>...</th></tr></thead> */
+  renderDataTable('csvTable',lines,headers,sep,10);
+  renderColPills('csvPills',tabData.csv,function(){showCSVPreview();});
+  showCSVPreview();
+  document.getElementById('csvTableWrap').style.display='block';
+}
+
+function showCSVPreview(){
+  var el=document.getElementById('csvPreview');
+  var col=tabData.csv.cols[tabData.csv.selCol];
+  if(!col){el.textContent='';return;}
+  var s=calcStats(col.vals);
+  el.textContent='Colonne selectionnee: '+col.name+' ('+col.vals.length+' valeurs)\nn='+s.n+'  mu='+s.mean.toFixed(3)+'  sigma='+s.std.toFixed(3)+'  min='+s.min.toFixed(2)+'  max='+s.max.toFixed(2)+'  outliers='+s.outlierCount;
+}
+
+/* ═══ PASTE TAB ═══
+   FIX #12: single oninput with debounce — no duplicate fire from onpaste+oninput
+   FIX #9: uses centralized renderDataTable
+   FIX #20: uses detectSep */
+var _pasteDebounceMs=60;
+function debouncedPasteInput(){
+  if(_pasteTimer) clearTimeout(_pasteTimer);
+  _pasteTimer=setTimeout(function(){_pasteTimer=null;pasteInput();},_pasteDebounceMs);
+}
+
+function pasteInput(){
+  var raw=document.getElementById('pasteArea').value.trim();
+  if(!raw){document.getElementById('pasteTableWrap').style.display='none';return;}
+  var sep=detectSep(raw); /* FIX #20 */
+  var lines=raw.split('\n').filter(function(l){return l.trim();});
+  if(lines.length<2){document.getElementById('pasteTableWrap').style.display='none';return;}
+  var headers=lines[0].split(sep).map(function(h){return h.trim().replace(/^["']|["']$/g,'');});
+  var cols=[];
+  for(var h=0;h<headers.length;h++) cols.push({name:headers[h]||('Col'+h),vals:[]});
+  for(var r=1;r<lines.length;r++){
+    var cells=lines[r].split(sep);
+    for(var c=0;c<headers.length;c++){
+      var v=parseFloat((cells[c]||'').trim().replace(',','.'));
+      if(!isNaN(v)) cols[c].vals.push(v);
+    }
+  }
+  var numCols=cols.filter(function(c){return c.vals.length>0;});
+  if(!numCols.length){document.getElementById('pasteTableWrap').style.display='none';return;}
+  tabData.paste.cols=numCols;
+  tabData.paste.selCol=0;
+  /* FIX #9: use centralized renderer */
+  renderDataTable('pasteTable',lines,headers,sep,10);
+  renderColPills('pastePills',tabData.paste,function(){showPastePreview();});
+  showPastePreview();
+  document.getElementById('pasteTableWrap').style.display='block';
+}
+
+function showPastePreview(){
+  var el=document.getElementById('pastePreview');
+  var col=tabData.paste.cols[tabData.paste.selCol];
+  if(!col){el.textContent='';return;}
+  var s=calcStats(col.vals);
+  el.textContent='Colonne selectionnee: '+col.name+' ('+col.vals.length+' valeurs)\nn='+s.n+'  mu='+s.mean.toFixed(3)+'  sigma='+s.std.toFixed(3)+'  min='+s.min.toFixed(2)+'  max='+s.max.toFixed(2);
+}
+
+/* ═══ FIX #8 + #9: CENTRALISED TABLE RENDERER ═══
+   Builds valid HTML: <thead><tr><th>…</th></tr></thead><tbody>…</tbody>
+   Used by both CSV and paste tabs — no more inconsistent innerHTML hacks. */
+function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function renderDataTable(tableId,lines,headers,sep,maxRows){
+  var t=document.getElementById(tableId);
+  /* Build <thead> */
+  var thCells='<th class="idx">#</th>';
+  for(var h=0;h<headers.length;h++) thCells+='<th>'+escH(headers[h])+'</th>';
+  /* Build <tbody> */
+  var tbody='';
+  var lim=Math.min(lines.length,maxRows+1);
+  for(var r=1;r<lim;r++){
+    if(!lines[r]||!lines[r].trim()) continue;
+    var cells=lines[r].split(sep);
+    tbody+='<tr><td class="idx">'+r+'</td>';
+    for(var c=0;c<headers.length;c++){
+      var val=(cells[c]||'').trim().replace(/^["']|["']$/g,'');
+      tbody+='<td>'+escH(val)+'</td>';
+    }
+    tbody+='</tr>';
+  }
+  t.innerHTML='<thead><tr>'+thCells+'</tr></thead><tbody>'+tbody+'</tbody>';
+}
+
+/* ═══ FIX #11: GENERIC PILL RENDERER ═══
+   Accepts tabRef (object with .selCol + .cols) instead of separate params.
+   Pills for csv/paste now correctly read/write their own selCol. */
+function renderColPills(containerId,tabRef,onSelect){
+  var el=document.getElementById(containerId);
+  el.innerHTML='';
+  for(var i=0;i<tabRef.cols.length;i++){
+    (function(idx){
+      var p=document.createElement('div');
+      p.className='cpill'+(idx===tabRef.selCol?' sel':'');
+      p.textContent=tabRef.cols[idx].name;
+      p.onclick=function(){tabRef.selCol=idx;renderColPills(containerId,tabRef,onSelect);onSelect();};
+      el.appendChild(p);
+    })(i);
+  }
+}
+
+/* ═══ STATS ═══
+   FIX #1 + #2: use proper linear-interpolation quantile (Hyndman-Fan type 7).
+   Replaces the incorrect sorted[Math.floor(n*p)] direct-index approach.
+   Consistent for q1, q3, and median — no more asymmetry between them. */
+function quantileInterp(sorted,p){
+  var n=sorted.length;
+  if(n===0) return NaN;
+  if(n===1) return sorted[0];
+  /* Clamp p to [0,1] */
+  if(p<=0) return sorted[0];
+  if(p>=1) return sorted[n-1];
+  /* Hyndman-Fan type 7: h = (n-1)*p */
+  var h=(n-1)*p;
+  var lo=Math.floor(h);
+  var hi=Math.min(lo+1,n-1); /* FIX: clamp so hi never exceeds array bounds */
+  return sorted[lo]+(h-lo)*(sorted[hi]-sorted[lo]);
+}
+
+function calcStats(arr){
+  var n=arr.length;
+  if(!n) return {n:0,mean:0,std:0,median:0,q1:0,q3:0,iqr:0,min:0,max:0,skew:0,kurt:0,outliers:[],outlierCount:0,hasNeg:false,absMax:0};
+  var sum=0;
+  for(var i=0;i<n;i++) sum+=arr[i];
+  var mean=sum/n,v2=0;
+  for(var j=0;j<n;j++) v2+=(arr[j]-mean)*(arr[j]-mean);
+  var std=Math.sqrt(v2/n);
+  var sorted=arr.slice().sort(function(a,b){return a-b;});
+  /* FIX #1: all three use quantileInterp — same algorithm, consistent results */
+  var q1=quantileInterp(sorted,0.25);
+  var q3=quantileInterp(sorted,0.75);
+  var median=quantileInterp(sorted,0.5);
+  var iqr=q3-q1;
+  var sk=0,ku=0;
+  if(std>0){
+    for(var k=0;k<n;k++){
+      var z=(arr[k]-mean)/std;
+      sk+=z*z*z; ku+=z*z*z*z;
+    }
+    sk/=n; ku=ku/n-3;
+  }
+  var f1=q1-1.5*iqr, f3=q3+1.5*iqr, outliers=[];
+  for(var oi=0;oi<n;oi++) if(arr[oi]<f1||arr[oi]>f3) outliers.push(arr[oi]);
+  var hasNeg=false, absMax=0;
+  for(var ni=0;ni<n;ni++){
+    if(arr[ni]<0) hasNeg=true;
+    if(Math.abs(arr[ni])>absMax) absMax=Math.abs(arr[ni]);
+  }
+  return{n:n,mean:mean,std:std,median:median,q1:q1,q3:q3,iqr:iqr,
+         min:sorted[0],max:sorted[n-1],skew:sk,kurt:ku,
+         outliers:outliers,outlierCount:outliers.length,hasNeg:hasNeg,absMax:absMax};
+}
+
+/* ═══ NORMALISATION ═══ */
+
+/* FIX #3: doMinMax when r===0 returns midpoint (lo+hi)/2, not lo.
+   Also safe when lo/hi not provided — explicit defaults. */
+function doMinMax(arr,lo,hi){
+  lo=(lo===undefined)?0:lo;
+  hi=(hi===undefined)?1:hi;
+  var mn=arr[0],mx=arr[0];
+  for(var i=1;i<arr.length;i++){if(arr[i]<mn)mn=arr[i];if(arr[i]>mx)mx=arr[i];}
+  var r=mx-mn;
+  if(r===0) return arr.map(function(){return (lo+hi)/2;}); /* FIX #3 */
+  return arr.map(function(v){return((v-mn)/r)*(hi-lo)+lo;});
+}
+
+function doMaxAbs(arr){
+  var m=0;
+  for(var i=0;i<arr.length;i++) if(Math.abs(arr[i])>m) m=Math.abs(arr[i]);
+  if(m===0) return arr.map(function(){return 0;});
+  return arr.map(function(v){return v/m;});
+}
+
+/* FIX #4: doRobust when IQR=0 falls back to std-based centering (not silent zeros).
+   Shows a visible warning to the user. If std is also 0, returns zeros. */
+function doRobust(arr){
+  var s=calcStats(arr);
+  var warnBox=document.getElementById('robustWarnBox');
+  if(s.iqr===0){
+    if(warnBox) warnBox.style.display='block';
+    if(s.std===0) return arr.map(function(){return 0;});
+    /* Fallback: use std as divisor so result is still centred */
+    return arr.map(function(v){return(v-s.median)/s.std;});
+  }
+  if(warnBox) warnBox.style.display='none';
+  return arr.map(function(v){return(v-s.median)/s.iqr;});
+}
+
+/* FIX #5: doQuantileUnif — tie-aware average-rank assignment.
+   Previously each tie got a different rank, breaking uniform distribution.
+   Now all tied values share the average of their rank positions. */
+function doQuantileUnif(arr){
+  var n=arr.length;
+  /* Build sorted index list */
+  var indexed=[];
+  for(var i=0;i<n;i++) indexed.push({v:arr[i],origIdx:i});
+  indexed.sort(function(a,b){return a.v-b.v;});
+
+  var out=new Array(n);
+  var pos=0;
+  while(pos<n){
+    /* Find full extent of this tie group */
+    var end=pos;
+    while(end+1<n && indexed[end+1].v===indexed[pos].v) end++;
+    /* Average rank for all members of the tie */
+    var rankSum=0;
+    for(var t=pos;t<=end;t++) rankSum+=(t+1)/(n+1);
+    var avgRank=rankSum/(end-pos+1);
+    for(var t=pos;t<=end;t++) out[indexed[t].origIdx]=avgRank;
+    pos=end+1;
+  }
+  return out;
+}
+
+function doQuantileNorm(arr){
+  /* Rational approximation to inverse normal CDF (Beasley-Springer-Moro) */
+  function invN(p){
+    p=Math.max(1e-6,Math.min(1-1e-6,p));
+    var a=[2.50662823884,-18.61500062529,41.39119773534,-25.44106049637];
+    var b=[-8.47351093090,23.08336743743,-21.06224101826,3.13082909833];
+    var c=[0.3374754822726147,0.9761690190917186,0.1607979714918209,0.0276438810333863,
+           0.0038405729373609,0.0003951896511349,0.0000321767881768,0.0000002888167364,0.0000003960315187];
+    if(p<0.02425||p>1-0.02425){
+      var q2=p<0.5?Math.sqrt(-2*Math.log(p)):Math.sqrt(-2*Math.log(1-p));
+      var rx=(((((((c[8]*q2+c[7])*q2+c[6])*q2+c[5])*q2+c[4])*q2+c[3])*q2+c[2])*q2+c[1])*q2+c[0];
+      return p<0.5?-rx:rx;
+    }
+    var q=p-.5,r2=q*q;
+    return(((((a[3]*r2+a[2])*r2+a[1])*r2+a[0])*q)/(((((b[3]*r2+b[2])*r2+b[1])*r2+b[0])*r2+1)));
+  }
+  return doQuantileUnif(arr).map(function(p){return invN(p);});
+}
+
+function doDecimal(arr){
+  var m=0;
+  for(var i=0;i<arr.length;i++) if(Math.abs(arr[i])>m) m=Math.abs(arr[i]);
+  if(m===0) return arr.map(function(){return 0;});
+  var k=Math.ceil(Math.log10(m));
+  return arr.map(function(v){return v/Math.pow(10,k);});
+}
+
+function applyMethod(arr){
+  if(SM==='1') return doMinMax(arr,SR==='01'?0:-1,1);
+  if(SM==='2') return doMaxAbs(arr);
+  if(SM==='3') return doRobust(arr);
+  if(SM==='4') return SD==='uniform'?doQuantileUnif(arr):doQuantileNorm(arr);
+  return doDecimal(arr);
+}
+
+/* ═══ UI ═══ */
+function selMethod(el,m){
+  document.querySelectorAll('.mc').forEach(function(c){c.classList.remove('sel');});
+  el.classList.add('sel');SM=m;
+  document.getElementById('rangeSelector').classList.toggle('v',m==='1');
+  document.getElementById('distSelector').classList.toggle('v',m==='4');
+  document.getElementById('sep1').style.display=m==='1'?'block':'none';
+  document.getElementById('sep2').style.display=m==='4'?'block':'none';
+}
+function selAppr(el,a){el.closest('.asel').querySelectorAll('.abtn').forEach(function(b){b.classList.remove('active');});el.classList.add('active');SA=a;}
+function selRange(el,r){el.closest('.asel').querySelectorAll('.abtn').forEach(function(b){b.classList.remove('active');});el.classList.add('active');SR=r;}
+function selDist(el,d){el.closest('.asel').querySelectorAll('.abtn').forEach(function(b){b.classList.remove('active');});el.classList.add('active');SD=d;}
+
+/* ═══ DIAGNOSTIC ENGINE ═══
+   FIX #6: absMax now comes from s.absMax (computed once in calcStats),
+           not recalculated in a separate loop here.
+   FIX #7: MaxAbs score uses Math.abs(s.median/s.absMax) to test centring
+           instead of s.mean/absMax which was misleading for skewed data. */
+function getDiagScores(arr){
+  var s=calcStats(arr);
+  var absMax=s.absMax; /* FIX #6: single source of truth */
+
+  /* Min-Max: good when clean data, bad when outliers or zero-range */
+  var mm=80;
+  if(s.outlierCount>0) mm-=s.outlierCount*20;
+  if(Math.abs(s.skew)>2) mm-=15;
+  if(s.max-s.min===0) mm-=80;
+  mm=Math.max(0,Math.min(100,mm));
+
+  /* MaxAbs: main advantage is preserving sign; penalise if no negatives */
+  var ma=50;
+  if(s.hasNeg) ma+=25; else ma-=20;
+  if(s.outlierCount>0) ma-=s.outlierCount*12;
+  /* FIX #7: use median (not mean) to test if data is centred around 0 */
+  if(absMax>0 && Math.abs(s.median/absMax)<0.2) ma+=15;
+  ma=Math.max(0,Math.min(100,ma));
+
+  var rb=40;
+  if(s.outlierCount>0) rb+=s.outlierCount*20;
+  if(Math.abs(s.skew)>1) rb+=20;
+  if(s.iqr===0) rb-=60;
+  rb=Math.max(0,Math.min(100,rb));
+
+  var qt=35;
+  if(Math.abs(s.skew)>1.5) qt+=30;
+  if(s.outlierCount>2) qt+=20;
+  if(Math.abs(s.kurt)>2) qt+=15;
+  if(s.n<5) qt-=30;
+  qt=Math.max(0,Math.min(100,qt));
+
+  var ds=30;
+  if(s.max>100) ds+=20;
+  if(s.max>1000) ds+=20;
+  if(s.hasNeg) ds-=10;
+  if(s.outlierCount>0) ds-=15;
+  ds=Math.max(0,Math.min(100,ds));
+
+  return{scores:{'1':mm,'2':ma,'3':rb,'4':qt,'5':ds},s:s,absMax:absMax};
+}
+
+function runDiagnostic(){
+  var arr=parseData();
+  if(arr.length<2){alert('Saisissez au moins 2 valeurs.');return;}
+  var res=getDiagScores(arr);
+  var scores=res.scores, s=res.s, absMax=res.absMax;
+  var winner='1',best=-1,ids=['1','2','3','4','5'];
+  for(var i=0;i<ids.length;i++){if(scores[ids[i]]>best){best=scores[ids[i]];winner=ids[i];}}
+  /* Store winner for applyDiagnostic — use dedicated variable, not DR */
+  window._diagWinner=winner;
+
+  document.getElementById('dHM').textContent=MFull[winner];
+  document.getElementById('dHF').textContent=MFormula[winner];
+  document.getElementById('dHR').innerHTML=buildHeroReason(winner,s,absMax);
+  document.getElementById('dHS').textContent=Math.round(scores[winner])+'%';
+
+  var scN={'1':'Min-Max','2':'MaxAbs','3':'Robust','4':'Quantile','5':'Decimal'};
+  var sorted2=ids.slice().sort(function(a,b){return scores[b]-scores[a];});
+  var sh='';
+  for(var si=0;si<sorted2.length;si++){
+    var id=sorted2[si],sc=scores[id],isW=id===winner;
+    sh+='<div class="dsc'+(isW?' win':'')+'"><div class="dsn" style="color:'+MCol[id]+'">'+(isW?'[TOP] ':'')+scN[id]+'</div>'+
+      '<div class="dsbw"><div class="dsb" style="width:'+sc+'%;background:'+(isW?'var(--a3)':MCol[id])+'"></div></div>'+
+      '<div class="dsnum">'+Math.round(sc)+'<span style="font-size:11px;color:var(--muted)">/100</span></div>'+
+      '<div class="dssub">'+buildScSub(id,s)+'</div></div>';
+  }
+  document.getElementById('diagScores').innerHTML=sh;
+  document.getElementById('dtreeFlow').innerHTML=buildTree(s,winner);
+  document.getElementById('diagAnalysis').innerHTML=buildAnalysis(s,arr,absMax);
+  document.getElementById('diagWhyNot').innerHTML=buildWhyNot(winner,s,scores);
+  document.getElementById('diagWrapper').classList.add('on');
+  document.getElementById('diagWrapper').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function buildScSub(id,s){
+  if(id==='1') return s.outlierCount>0?'Outliers distordent min/max':'Donnees propres, ideal';
+  if(id==='2') return s.hasNeg?'Negatifs presents, adapte':'Pas de negatifs, moins utile';
+  if(id==='3') return s.outlierCount>0?'Protege de '+s.outlierCount+' outlier(s)':'Pas d\'outliers a traiter';
+  if(id==='4') return Math.abs(s.skew)>1.5?'Distribution asymetrique, pertinent':'Donnees propres, sur-complexe';
+  return s.max>100?'Grande magnitude, adapte':'Magnitude normale, peu utile';
+}
+
+/* FIX #6: absMax passed in — no re-computation */
+function buildHeroReason(winner,s,absMax){
+  if(winner==='1') return 'Vos donnees sont <strong>propres ('+s.outlierCount+' outlier(s))</strong>, plage definie min='+s.min.toFixed(1)+' max='+s.max.toFixed(1)+'.<br><br><strong>Ce que fait Min-Max :</strong> ramene dans [0,1] en soustrayant le min puis divisant par l\'etendue ('+(s.max-s.min).toFixed(2)+'). La valeur minimale devient 0, la maximale 1. <strong>Relations proportionnelles preservees.</strong><br><br><strong>Pourquoi optimal :</strong> sans outliers, min et max representent les vraies bornes. Methode standard, attendue par MinMaxScaler.';
+  if(winner==='2') return 'Vos donnees contiennent des <strong>valeurs negatives</strong> (min='+s.min.toFixed(2)+') et semblent centrees autour de zero.<br><br><strong>Ce que fait MaxAbs :</strong> divise par max|X| = '+absMax.toFixed(2)+'. Resultat dans [-1,1], <strong>signe parfaitement preserve</strong>. Zero reste zero.<br><br><strong>Pourquoi optimal :</strong> MinMax detruirait la notion de "valeur negative". MaxAbs respecte cette structure.';
+  if(winner==='3'){
+    var ol=s.outliers.slice(0,3);
+    var ols='';for(var i=0;i<ol.length;i++) ols+=(i>0?', ':'')+ol[i].toFixed(1);
+    if(s.outlierCount>3) ols+='...';
+    return 'Vos donnees contiennent <strong>'+s.outlierCount+' outlier(s) ['+ols+']</strong> qui invalident Min-Max.<br><br><strong>Ce que fait Robust :</strong> utilise la <strong>mediane</strong> ('+s.median.toFixed(2)+') et l\'<strong>IQR</strong> ('+s.iqr.toFixed(2)+') — statistiques insensibles aux extremes.<br><br><strong>Pourquoi optimal :</strong> Min-Max compresserait les valeurs normales dans une infime plage. Robust les preserve et isole les extremes.';
+  }
+  if(winner==='4') return 'Distribution <strong>fortement asymetrique</strong> (skewness='+s.skew.toFixed(2)+')'+(s.outlierCount>0?' avec '+s.outlierCount+' outlier(s)':'')+'.<br><br><strong>Ce que fait Quantile :</strong> remplace chaque valeur par son rang percentile, puis transforme vers <strong>distribution uniforme ou normale</strong>. Seul le rang compte, pas la valeur brute.<br><br><strong>Pourquoi optimal :</strong> asymetrie forte = toutes les autres methodes preservent le probleme ou sont distordues.';
+  var k=absMax>0?Math.ceil(Math.log10(absMax)):1;
+  return 'Vos donnees ont une <strong>grande magnitude</strong> (max='+s.max.toFixed(0)+').<br><br><strong>Ce que fait Decimal Scaling :</strong> k=ceil(log10(max|X|))='+k+', divise par 10^'+k+'. <strong>Proportions parfaitement preservees.</strong><br><br><strong>Pourquoi adapte :</strong> grandes valeurs sans outliers ni negatifs. Intuitif et simple.';
+}
+
+/* FIX #19: renamed loop variable from oi to oli to avoid shadowing calcStats's oi */
+function buildTree(s,winner){
+  var steps=[],hasOut=s.outlierCount>0,hasNeg=s.hasNeg,bigMag=s.max>100,strongSkew=Math.abs(s.skew)>1.5;
+  var ol=s.outliers.slice(0,3);
+  var ols='';
+  for(var oli=0;oli<ol.length;oli++) ols+=(oli>0?', ':'')+ol[oli].toFixed(1);
+  if(s.outlierCount>3) ols+='...';
+
+  steps.push({c:'ddq',s:'?',q:'Y a-t-il des outliers ? (IQR x 1.5)',a:hasOut?'<span style="color:var(--a3)">OUI &mdash; '+s.outlierCount+' valeur(s) ['+ols+']</span>':'<span style="color:var(--a4)">NON &mdash; toutes dans les bornes IQR x 1.5</span>'});
+  if(hasOut){
+    steps.push({c:'ddy',s:'Y',q:'Outliers &rarr; Min-Max et MaxAbs seront distordus',a:'Min-Max : l\'outlier devient le max, compressant les valeurs normales. On passe aux methodes robustes.'});
+    steps.push({c:'ddq',s:'?',q:'Distribution tres asymetrique ? skewness='+s.skew.toFixed(2),a:strongSkew?'<span style="color:var(--a3)">OUI &mdash; Quantile sera plus puissant</span>':'<span style="color:var(--a4)">NON &mdash; Robust suffit</span>'});
+    steps.push({c:'dde',s:'V',q:(strongSkew?'QUANTILE':'ROBUST')+' recommande',a:strongSkew?'Distribution asymetrique + outliers : Quantile transforme le rang, ignorant les extremes.':'Mediane ('+s.median.toFixed(2)+') et IQR ('+s.iqr.toFixed(2)+') : insensibles aux outliers.'});
+  } else {
+    steps.push({c:'ddn',s:'N',q:'Pas d\'outliers &mdash; methodes bornees fiables',a:'Min='+s.min.toFixed(2)+' et max='+s.max.toFixed(2)+' representent les vraies bornes.'});
+    steps.push({c:'ddq',s:'?',q:'Valeurs negatives ? min='+s.min.toFixed(2),a:hasNeg?'<span style="color:var(--a3)">OUI &mdash; donnees avec negatifs</span>':'<span style="color:var(--a4)">NON &mdash; toutes positives ou nulles</span>'});
+    if(hasNeg){
+      steps.push({c:'ddy',s:'Y',q:'Valeurs negatives &rarr; MaxAbs preserve le signe',a:'Min-Max placerait les negatifs dans [0,1], perdant la notion de valeur negative.'});
+      steps.push({c:'dde',s:'V',q:'MAXABS recommande',a:'Borne dans [-1,1], signe preserve. Ideal pour donnees centrees autour de zero.'});
+    } else {
+      steps.push({c:'ddq',s:'?',q:'Grande magnitude ? max='+s.max.toFixed(0),a:bigMag?'<span style="color:var(--a3)">OUI &gt; 100</span>':'<span style="color:var(--a4)">NON &mdash; normale</span>'});
+      steps.push({c:'dde',s:'V',q:(bigMag?'DECIMAL SCALING ou MIN-MAX':'MIN-MAX')+' recommande',a:bigMag?'Grandes valeurs : les deux fonctionnent. Min-Max plus standard.':'Donnees propres, positives. Min-Max est la methode standard.'});
+    }
+  }
+  var html='';
+  for(var si=0;si<steps.length;si++){
+    var st=steps[si];
+    html+='<div class="dstep"><div class="ddot '+st.c+'">'+st.s+'</div><div class="dsc2"><div class="dsq">'+st.q+'</div><div class="dsa">'+st.a+'</div></div></div>';
+  }
+  return html;
+}
+
+/* FIX #6: absMax passed in from getDiagScores */
+function buildAnalysis(s,arr,absMax){
+  var skewLvl=Math.abs(s.skew)<0.5?'Symetrique':Math.abs(s.skew)<1.5?'Moderee':'Forte';
+  var skewCls=Math.abs(s.skew)<0.5?'tok':Math.abs(s.skew)<1.5?'twarn':'tbad';
+  var outCls=s.outlierCount===0?'tok':s.outlierCount<=2?'twarn':'tbad';
+  var magCls=absMax>1000?'twarn':absMax>100?'tinf':'tok';
+
+  /* FIX #17: added Q1/Q3 to stats table */
+  var c1='<div class="dac"><div class="dat or">Statistiques cles</div>'+
+    dr('N',s.n)+dr('Moyenne',s.mean.toFixed(4))+dr('Ecart-type',s.std.toFixed(4))+
+    dr('Mediane',s.median.toFixed(4))+
+    dr('Q1 / Q3',s.q1.toFixed(3)+' / '+s.q3.toFixed(3))+
+    dr('IQR',s.iqr.toFixed(4))+dr('Min / Max',s.min.toFixed(2)+' / '+s.max.toFixed(2))+
+    dr('Etendue',(s.max-s.min).toFixed(4))+dr('max|X|',absMax.toFixed(2))+'</div>';
+
+  var c2='<div class="dac"><div class="dat bl">Caracteristiques cles</div>'+
+    '<div class="dr"><span class="drl">Negatifs</span><span class="dtag '+(s.hasNeg?'twarn':'tok')+'">'+(s.hasNeg?'Oui':'Non')+'</span></div>'+
+    '<div style="font-size:10px;color:var(--muted);padding:4px 0 8px;line-height:1.6">'+(s.hasNeg?'Negatifs detectes. MaxAbs preserve le signe. Min-Max les placerait en [0,1].':'Pas de negatifs. Min-Max directement applicable.')+' </div>'+
+    '<div class="dr"><span class="drl">Outliers (IQR x1.5)</span><span style="display:flex;align-items:center;gap:6px;"><span>'+s.outlierCount+'</span><span class="dtag '+outCls+'">'+(s.outlierCount===0?'Aucun':s.outlierCount<=2?'Peu':'Nombreux')+'</span></span></div>'+
+    '<div style="font-size:10px;color:var(--muted);padding:4px 0 8px;line-height:1.6">'+(s.outlierCount===0?'Aucun outlier. Min et max representent les vraies bornes.':s.outlierCount+' outlier(s). Min-Max sera distordu. Utilisez Robust.')+' </div>'+
+    '<div class="dr"><span class="drl">Skewness</span><span style="display:flex;align-items:center;gap:6px;"><span>'+s.skew.toFixed(3)+'</span><span class="dtag '+skewCls+'">'+skewLvl+'</span></span></div>'+
+    '<div style="font-size:10px;color:var(--muted);padding:4px 0 8px;line-height:1.6">'+(Math.abs(s.skew)<0.5?'Distribution symetrique. Toutes les methodes fonctionnent.':Math.abs(s.skew)<1.5?'Asymetrie moderee. Min-Max acceptable, Quantile peut egaliser.':'Forte asymetrie. Min-Max comprimerait la queue courte. Robust ou Quantile conseilles.')+' </div>'+
+    '<div class="dr"><span class="drl">max|X|</span><span style="display:flex;align-items:center;gap:6px;"><span>'+absMax.toFixed(1)+'</span><span class="dtag '+magCls+'">'+(absMax>1000?'Tres grande':absMax>100?'Grande':'Normale')+'</span></span></div>'+
+  '</div>';
+
+  /* FIX #19: renamed mi/io loop vars to avoid shadowing */
+  var impactMsg='';
+  if(s.outlierCount>0){
+    var mmR=doMinMax(arr,0,1);
+    var nmx=0;
+    for(var mri=0;mri<arr.length;mri++){
+      var isOutlier=false;
+      for(var oji=0;oji<s.outliers.length;oji++) if(arr[mri]===s.outliers[oji]){isOutlier=true;break;}
+      if(!isOutlier&&mmR[mri]>nmx) nmx=mmR[mri];
+    }
+    impactMsg='Apres Min-Max, valeurs normales dans [0, '+nmx.toFixed(2)+'] &mdash; '+Math.round((1-nmx)*100)+'% de l\'echelle perdu.';
+  }
+
+  var c3='<div class="dac"><div class="dat pi">Impact outliers sur methodes</div>'+
+    (s.outlierCount===0?
+      '<div style="background:rgba(170,255,0,.07);border:1px solid rgba(170,255,0,.2);padding:10px;"><div style="color:var(--a3);font-size:10px;font-weight:700;margin-bottom:4px;">DONNEES PROPRES</div><div style="font-size:10px;color:var(--muted);line-height:1.7">Aucun outlier. Min='+s.min.toFixed(2)+' max='+s.max.toFixed(2)+' representent les vraies bornes. Normalisation propre.</div></div>':
+      '<div style="background:rgba(255,60,120,.07);border:1px solid rgba(255,60,120,.2);padding:10px;margin-bottom:8px;"><div style="color:var(--a1);font-size:10px;font-weight:700;margin-bottom:4px;">IMPACT MIN-MAX ('+s.outlierCount+' outlier(s))</div><div style="font-size:10px;color:var(--muted);line-height:1.7">'+impactMsg+'</div></div>'+
+      '<div style="background:rgba(255,157,0,.07);border:1px solid rgba(255,157,0,.2);padding:10px;"><div style="color:var(--a4);font-size:10px;font-weight:700;margin-bottom:4px;">SOLUTION : ROBUST</div><div style="font-size:10px;color:var(--muted);line-height:1.7">Mediane ('+s.median.toFixed(2)+') et IQR ('+s.iqr.toFixed(2)+') ne changent pas avec les outliers.</div></div>'
+    )+'</div>';
+
+  var c4='<div class="dac"><div class="dat pu">Contexte recommande</div><div style="font-size:10px;color:var(--muted);line-height:1.9;"><span style="color:var(--a2)">ML (KNN, K-means) :</span> '+(s.outlierCount===0?'Min-Max recommande. Distances necessitent bornes fixes.':'Robust recommande. Outliers fausseraient les distances.')+' <br><span style="color:var(--a2)">Reseaux de neurones :</span> '+(s.hasNeg?'MaxAbs ou Min-Max [-1,1] pour les activations tanh.':'Min-Max [0,1] pour sigmoide, [-1,1] pour tanh.')+' <br><span style="color:var(--a2)">NLP / Sparse :</span> MaxAbs independamment de la distribution &mdash; preserve les zeros.</div></div>';
+
+  return c1+c2+c3+c4;
+}
+
+function dr(l,v){return '<div class="dr"><span class="drl">'+l+'</span><span class="drv">'+v+'</span></div>';}
+
+function buildWhyNot(winner,s,scores){
+  var all=[],ids=['1','2','3','4','5'];
+  for(var i=0;i<ids.length;i++) if(ids[i]!==winner) all.push(ids[i]);
+  var names={'1':'Min-Max','2':'MaxAbs','3':'Robust','4':'Quantile','5':'Decimal Scaling'};
+  function getReason(id){
+    if(id==='1'){if(s.outlierCount>0)return 'Outliers deviennent les bornes min/max, compressant les valeurs normales. Score:'+Math.round(scores['1'])+'/100.';if(s.hasNeg)return 'Les negatifs seraient deplaces en [0,1], perdant la semantique. Score:'+Math.round(scores['1'])+'/100.';return 'Valide ici (score '+Math.round(scores['1'])+'/100) mais une autre methode est legerement plus adaptee.';}
+    if(id==='2'){if(!s.hasNeg)return 'Concu pour preserver le signe. Sans negatifs, avantage principal absent. Score:'+Math.round(scores['2'])+'/100.';return 'Applicable (score '+Math.round(scores['2'])+'/100) mais configuration specifique avantage une autre methode.';}
+    if(id==='3'){if(s.outlierCount===0)return 'Concu pour resister aux outliers. Sans outliers, mediane et IQR n\'apportent rien. Resultat non borne. Score:'+Math.round(scores['3'])+'/100.';return 'Applicable (score '+Math.round(scores['3'])+'/100) mais Quantile plus puissant avec forte asymetrie.';}
+    if(id==='4'){if(s.n<10)return 'Necessite assez de donnees pour que les rangs percentiles soient stables. n='+s.n+' trop petit. Score:'+Math.round(scores['4'])+'/100.';if(Math.abs(s.skew)<1)return 'Transforme fondamentalement la distribution. Inutile quand donnees deja bien distribuees. Score:'+Math.round(scores['4'])+'/100.';return 'Applicable mais complexe a interpreter. Score:'+Math.round(scores['4'])+'/100.';}
+    if(id==='5'){if(s.max<=100)return 'Utile pour grandes magnitudes (>100). Vos donnees: max='+s.max.toFixed(1)+'. Score:'+Math.round(scores['5'])+'/100.';if(s.hasNeg)return 'Peut donner resultats < -1 avec negatifs. MaxAbs plus rigoureux. Score:'+Math.round(scores['5'])+'/100.';return 'Arbitraire (base 10). Min-Max plus precis et standard. Score:'+Math.round(scores['5'])+'/100.';}
+    return '';
+  }
+  var html='';
+  for(var wi=0;wi<all.length;wi++){
+    var id=all[wi];
+    html+='<div class="wnc"><div class="wnn" style="color:'+MCol[id]+'">&#x2715; '+names[id]+' ('+Math.round(scores[id])+'/100)</div><div class="wnr">'+getReason(id)+'</div></div>';
+  }
+  return html;
+}
+
+function closeDiag(){document.getElementById('diagWrapper').classList.remove('on');}
+
+/* FIX: applyDiagnostic uses window._diagWinner (set in runDiagnostic),
+   never the old stale DR string. */
+function applyDiagnostic(){
+  var winner=window._diagWinner||'1';
+  var cards=document.querySelectorAll('.mc');
+  for(var i=0;i<cards.length;i++) cards[i].classList.remove('sel');
+  var idx=parseInt(winner)-1;
+  if(cards[idx]){
+    cards[idx].classList.add('sel');SM=winner;
+    document.getElementById('rangeSelector').classList.toggle('v',SM==='1');
+    document.getElementById('distSelector').classList.toggle('v',SM==='4');
+    document.getElementById('sep1').style.display=SM==='1'?'block':'none';
+    document.getElementById('sep2').style.display=SM==='4'?'block':'none';
+  }
+  closeDiag();compute();
+}
+
+/* ═══ COMPUTE ═══
+   FIX #17: buildTable now includes Q1, Q3, and outlier count
+   FIX #18: adaptive bin count — sqrt(n) clamped to [4,12]
+   FIX #15: _exportArr/_exportTrans set here (compute only), not in compareAll */
+function buildTable(arr,lbl){
+  var s=calcStats(arr);
+  return '<thead><tr><th>'+lbl+'</th><th>Valeur</th></tr></thead><tbody>'+
+    '<tr><td>n</td><td>'+s.n+'</td></tr>'+
+    '<tr><td>Minimum</td><td style="color:var(--a1)">'+s.min.toFixed(4)+'</td></tr>'+
+    '<tr><td>Maximum</td><td style="color:var(--a3)">'+s.max.toFixed(4)+'</td></tr>'+
+    '<tr><td>Moyenne</td><td style="color:var(--a2)">'+s.mean.toFixed(4)+'</td></tr>'+
+    '<tr><td>Ecart-type</td><td style="color:var(--a2)">'+s.std.toFixed(4)+'</td></tr>'+
+    '<tr><td>Mediane</td><td>'+s.median.toFixed(4)+'</td></tr>'+
+    '<tr><td>Q1 / Q3</td><td>'+s.q1.toFixed(3)+' / '+s.q3.toFixed(3)+'</td></tr>'+
+    '<tr><td>IQR</td><td>'+s.iqr.toFixed(4)+'</td></tr>'+
+    '<tr><td>Outliers (IQR x1.5)</td><td style="color:'+(s.outlierCount>0?'var(--a1)':'var(--a3)')+'">'+s.outlierCount+'</td></tr>'+
+  '</tbody>';
+}
+
+function drawChart(cid,arr,color,old){
+  if(old) old.destroy();
+  var ctx=document.getElementById(cid).getContext('2d');
+  var mn=arr[0],mx=arr[0];
+  for(var i=1;i<arr.length;i++){if(arr[i]<mn)mn=arr[i];if(arr[i]>mx)mx=arr[i];}
+  /* FIX #18: adaptive bins — sqrt(n), clamped [4,12] */
+  var bins=Math.max(4,Math.min(12,Math.ceil(Math.sqrt(arr.length))));
+  var w=(mx-mn)/bins||1,counts=[],labels=[];
+  for(var j=0;j<bins;j++){counts.push(0);labels.push((mn+j*w).toFixed(2));}
+  arr.forEach(function(v){
+    var b=Math.floor((v-mn)/w);
+    if(b>=bins) b=bins-1;
+    if(b<0) b=0;
+    counts[b]++;
+  });
+  return new Chart(ctx,{
+    type:'bar',
+    data:{labels:labels,datasets:[{data:counts,backgroundColor:color+'55',borderColor:color,borderWidth:1.5,borderRadius:2}]},
+    options:{responsive:true,plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#6b6b8a',font:{family:'Space Mono',size:9},maxTicksLimit:5},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{ticks:{color:'#6b6b8a',font:{family:'Space Mono',size:9}},grid:{color:'rgba(255,255,255,.04)'}}
+      }
+    }
+  });
+}
+
+function compute(){
+  var arr=parseData();
+  if(arr.length<2){alert('Saisissez au moins 2 valeurs.');return;}
+  var btn=document.getElementById('runBtn');
+  btn.textContent='CALCUL...';
+  setTimeout(function(){
+    var trans=applyMethod(arr);
+    var st=calcStats(trans);
+
+    /* FIX #15: update export state here — always in sync with last compute() */
+    _exportArr=arr.slice();
+    _exportTrans=trans.slice();
+    _exportMethod=MN[SM];
+
+    document.getElementById('mBadge').textContent=MN[SM];
+    document.getElementById('aBadge').textContent=SA.toUpperCase();
+    document.getElementById('colBadge').textContent='Export: '+getActiveColName();
+    document.getElementById('tAvant').innerHTML=buildTable(arr,'Original');
+    document.getElementById('tApres').innerHTML=buildTable(trans,'Transforme');
+
+    var vrow=document.getElementById('verifyRow');
+    vrow.innerHTML='';
+    function addV(t,c){var d=document.createElement('div');d.className='vb '+(c||'');d.textContent=t;vrow.appendChild(d);}
+    if(SM==='1'){var lo=SR==='01'?0:-1;addV('min~'+lo+':'+(Math.abs(st.min-lo)<.001?'OK':'~'),Math.abs(st.min-lo)<.001?'':'w');addV('max~1:'+(Math.abs(st.max-1)<.001?'OK':'~'),Math.abs(st.max-1)<.001?'':'w');}
+    else if(SM==='2'){addV('|max|<=1:'+(Math.abs(st.max)<=1.001?'OK':'X'),Math.abs(st.max)<=1.001?'i':'w');addV('Signe preserve','i');}
+    else if(SM==='3'){addV('Mediane~0:'+(Math.abs(st.median)<.1?'OK':'~'),Math.abs(st.median)<.1?'':'w');addV('Robuste aux outliers','i');}
+    else if(SM==='4'){addV('Distribution: '+SD,'i');addV('['+st.min.toFixed(2)+', '+st.max.toFixed(2)+']','i');}
+    else if(SM==='5'){
+      var mabs2=0;
+      for(var ai=0;ai<arr.length;ai++) if(Math.abs(arr[ai])>mabs2) mabs2=Math.abs(arr[ai]);
+      var k2=Math.ceil(Math.log10(mabs2));
+      addV('Divise par 10^'+k2,'i');addV('|max|<=1:'+(Math.abs(st.max)<=1.001?'OK':'~'),'i');
+    }
+    var dn=document.createElement('div');dn.className='vb i';dn.textContent='n='+st.n;vrow.appendChild(dn);
+
+    CA=drawChart('chartAvant',arr,'#ff9d00',CA);
+    CB=drawChart('chartApres',trans,'#00e5ff',CB);
+
+    var info=MI[SM];var uch='',ph='',ch='';
+    for(var i=0;i<info.uc.length;i++) uch+='<li>'+info.uc[i]+'</li>';
+    for(var j=0;j<info.pros.length;j++) ph+='<li>'+info.pros[j]+'</li>';
+    for(var m=0;m<info.cons.length;m++) ch+='<li>'+info.cons[m]+'</li>';
+    document.getElementById('infoGrid').innerHTML=
+      '<div class="ibox"><div class="ibt b">Cas d\'utilisation</div><ul class="ilist">'+uch+'</ul></div>'+
+      '<div class="ibox"><div class="ibt g">Avantages</div><ul class="ilist">'+ph+'</ul></div>'+
+      '<div class="ibox"><div class="ibt r">Inconvenients</div><ul class="ilist">'+ch+'</ul></div>';
+
+    document.getElementById('compareArea').style.display='none';
+    document.getElementById('results').classList.add('on');
+    document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+    btn.textContent='EXECUTER';
+  },300);
+}
+
+/* FIX #16: compareAll now includes Min-Max[-1,1] and Quantile Normal as 7 entries
+   FIX #21: each card shows outlier count of the transformed data */
+function compareAll(){
+  var arr=parseData();
+  if(arr.length<2){alert('Saisissez au moins 2 valeurs.');return;}
+  var methods=[
+    {name:'Min-Max [0,1]',   fn:function(){return doMinMax(arr,0,1);},  col:'#ff3c78'},
+    {name:'Min-Max [-1,1]',  fn:function(){return doMinMax(arr,-1,1);}, col:'#ff7aaa'},
+    {name:'MaxAbs',          fn:function(){return doMaxAbs(arr);},       col:'#00e5ff'},
+    {name:'Robust',          fn:function(){return doRobust(arr);},       col:'#ff9d00'},
+    {name:'Quantile Unif.',  fn:function(){return doQuantileUnif(arr);}, col:'#bf80ff'},
+    {name:'Quantile Normal', fn:function(){return doQuantileNorm(arr);}, col:'#d4aaff'},
+    {name:'Decimal Scal.',   fn:function(){return doDecimal(arr);},      col:'#aaff00'}
+  ];
+  var html='';
+  for(var mi=0;mi<methods.length;mi++){
+    var m=methods[mi];
+    var t=m.fn();
+    var s=calcStats(t);
+    html+='<div class="cmpc" style="border-color:'+m.col+'33">'+
+      '<div class="cmpt" style="color:'+m.col+'">'+m.name+'</div>'+
+      '<div class="cmpv" style="color:'+m.col+'">'+s.min.toFixed(2)+' &rarr; '+s.max.toFixed(2)+'</div>'+
+      '<div class="cmps">mu='+s.mean.toFixed(3)+'  sigma='+s.std.toFixed(3)+'</div>'+
+      '<div class="cmps" style="margin-top:4px;color:'+m.col+'">x0='+t[0].toFixed(4)+'</div>'+
+      /* FIX #21: show outlier count per method */
+      '<div class="cmps" style="margin-top:3px;color:'+(s.outlierCount>0?'var(--a1)':'var(--a3)')+'">outliers: '+s.outlierCount+'</div>'+
+    '</div>';
+  }
+  /* FIX: compareAll grid needs 7 cols */
+  document.getElementById('compareGrid').style.gridTemplateColumns='repeat(4,1fr)';
+  document.getElementById('compareGrid').innerHTML=html;
+  document.getElementById('compareArea').style.display='block';
+  document.getElementById('results').classList.add('on');
+  document.getElementById('compareArea').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* FIX #15 + #21: export uses _exportArr/_exportTrans (set by compute(), always fresh).
+   Filename includes method name. */
+function exportCSV(){
+  if(!_exportArr||!_exportTrans){alert('Lancez d\'abord un calcul (bouton EXECUTER).');return;}
+  var colName=getActiveColName();
+  /* FIX #21: method name in filename so multiple exports don't overwrite each other */
+  var methodSlug=_exportMethod.toLowerCase().replace(/[\s\-\/]+/g,'_');
+  var rows=[colName+'_original,'+colName+'_'+methodSlug];
+  for(var i=0;i<_exportArr.length;i++) rows.push(_exportArr[i]+','+_exportTrans[i].toFixed(6));
+  var blob=new Blob([rows.join('\n')],{type:'text/csv'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='normalise_'+colName+'_'+methodSlug+'.csv';
+  a.click();
+}
+
+/* INIT */
+listChanged();
+</script>
+</body>
+</html>

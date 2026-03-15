@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Cleaning — Methods</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--surface:#12121a;--card:#1a1a26;--border:#2a2a3f;--a1:#ff3c78;--a2:#00e5ff;--a3:#aaff00;--a4:#ff9d00;--a5:#bf80ff;--text:#e8e8f5;--muted:#6b6b8a;--fm:'Space Mono',monospace;--fd:'Syne',sans-serif;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--fm);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(255,60,120,.07),transparent 70%);pointer-events:none;z-index:0;animation:orb 9s ease-in-out infinite alternate;}
+@keyframes orb{from{transform:translate(0,0) scale(1);}to{transform:translate(-80px,100px) scale(1.2);}}
+@keyframes fu{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.ctn{position:relative;z-index:1;max-width:1380px;margin:0 auto;padding:36px 24px;}
+.tag{display:inline-block;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--a2);border:1px solid var(--a2);padding:4px 10px;margin-bottom:14px;}
+h1{font-family:var(--fd);font-size:clamp(28px,5vw,60px);font-weight:800;line-height:.95;letter-spacing:-2px;color:#fff;margin-bottom:6px;}
+h1 span{-webkit-text-stroke:1px var(--a1);-webkit-text-fill-color:transparent;}
+.hrow{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:36px;}
+.hdesc{font-size:11px;color:var(--muted);line-height:1.8;max-width:440px;}
+.subnav{display:flex;gap:4px;flex-wrap:wrap;}
+.snbtn{font-family:var(--fm);font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:5px 12px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;text-decoration:none;display:inline-block;}
+.snbtn:hover{border-color:var(--a2);color:var(--a2);}
+.snbtn.cur{border-color:var(--a1);color:var(--a1);background:rgba(255,60,120,.06);}
+label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;}
+select,input[type=text]{font-family:var(--fm);font-size:12px;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 12px;outline:none;transition:border-color .2s;cursor:pointer;}
+select:focus,input[type=text]:focus{border-color:var(--a2);}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.panel{background:var(--card);border:1px solid var(--border);padding:24px;position:relative;animation:fu .4s ease both;margin-bottom:20px;}
+.plabel{position:absolute;top:-10px;left:20px;background:var(--bg);font-size:10px;letter-spacing:2px;padding:0 8px;text-transform:uppercase;}
+/* CATEGORY TABS */
+.cattabs{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:22px;}
+.ctab{font-family:var(--fm);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:8px 14px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;position:relative;}
+.ctab::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;transform:scaleX(0);transition:transform .25s;}
+.ctab:hover::after,.ctab.on::after{transform:scaleX(1);}
+.ctab.on,.ctab:hover{color:#fff;}
+.ctab.cc1::after{background:var(--a1);} .ctab.cc1.on{border-color:var(--a1);}
+.ctab.cc2::after{background:var(--a4);} .ctab.cc2.on{border-color:var(--a4);}
+.ctab.cc3::after{background:var(--a1);} .ctab.cc3.on{border-color:var(--a1);}
+.ctab.cc4::after{background:var(--a4);} .ctab.cc4.on{border-color:var(--a4);}
+.ctab.cc5::after{background:var(--a5);} .ctab.cc5.on{border-color:var(--a5);}
+.ctab.cc6::after{background:var(--a5);} .ctab.cc6.on{border-color:var(--a5);}
+.ctab.cc7::after{background:var(--a2);} .ctab.cc7.on{border-color:var(--a2);}
+.ctab.cc8::after{background:var(--a3);} .ctab.cc8.on{border-color:var(--a3);}
+.ctab.cc9::after{background:var(--a2);} .ctab.cc9.on{border-color:var(--a2);}
+.ctab.cc10::after{background:var(--a5);} .ctab.cc10.on{border-color:var(--a5);}
+.ctab.cc11::after{background:var(--a4);} .ctab.cc11.on{border-color:var(--a4);}
+/* STATS CHIPS */
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0;}
+.chip{background:var(--surface);border:1px solid var(--border);padding:10px 16px;min-width:90px;}
+.chip-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.chip-val{font-family:var(--fd);font-size:18px;font-weight:800;}
+.ca1{color:var(--a1);}.ca2{color:var(--a2);}.ca3{color:var(--a3);}.ca4{color:var(--a4);}.ca5{color:var(--a5);}.cw{color:var(--text);}
+/* BEFORE/AFTER GRID */
+.bagrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:900px){.bagrid{grid-template-columns:1fr;}}
+.bapanel{background:var(--surface);border:1px solid var(--border);padding:16px;}
+.ba-title{font-size:9px;letter-spacing:2px;text-transform:uppercase;padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--border);}
+.ba-title.bef{color:var(--a4);} .ba-title.aft{color:var(--a3);}
+/* TABLES */
+.twrap{overflow-x:auto;overflow-y:auto;max-height:400px;}
+.dtbl{width:100%;border-collapse:collapse;font-size:11px;}
+.dtbl th{background:var(--bg);color:var(--a2);font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:7px 10px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2;white-space:nowrap;text-align:center;}
+.dtbl td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.03);text-align:center;white-space:nowrap;}
+.dtbl tr:hover td{background:rgba(255,255,255,.02);}
+.idx{color:var(--muted);font-size:9px;}
+/* CELL STATES */
+.c-null{color:var(--a1)!important;font-style:italic;font-weight:700;}
+.c-dup{background:rgba(255,60,120,.06)!important;}
+.c-dup td{color:rgba(255,60,120,.7)!important;}
+.c-removed{opacity:.22;text-decoration:line-through;}
+.c-imputed{color:var(--a3)!important;font-weight:700;background:rgba(170,255,0,.07)!important;}
+.c-outlier{color:var(--a1)!important;font-weight:700;background:rgba(255,60,120,.09)!important;}
+.c-capped{color:var(--a4)!important;font-weight:700;background:rgba(255,157,0,.08)!important;}
+.c-type{color:var(--a4)!important;font-weight:700;background:rgba(255,157,0,.08)!important;}
+.c-text{color:var(--a5)!important;font-weight:700;background:rgba(191,128,255,.08)!important;}
+.c-space{color:var(--a5)!important;font-weight:700;background:rgba(191,128,255,.08)!important;}
+.c-log{color:var(--a2)!important;font-weight:700;background:rgba(0,229,255,.07)!important;}
+.c-scale{color:var(--a3)!important;font-weight:700;background:rgba(170,255,0,.07)!important;}
+/* NEW CELL CLASSES */
+.c-date{color:var(--a2)!important;font-weight:700;background:rgba(0,229,255,.07)!important;}
+.c-date-new{color:var(--a2)!important;font-weight:700;background:rgba(0,229,255,.12)!important;}
+.c-encoding{color:var(--a5)!important;font-weight:700;background:rgba(191,128,255,.09)!important;}
+.c-semantic{color:var(--a4)!important;font-weight:700;background:rgba(255,157,0,.08)!important;}
+.c-sem-bad{color:var(--a1)!important;font-weight:700;background:rgba(255,60,120,.09)!important;}
+/* EXPLAIN BOX */
+.explain{background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.15);padding:12px 16px;font-size:11px;color:var(--a2);line-height:1.8;margin-bottom:16px;}
+/* LEGEND */
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;}
+.leg{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);}
+.leg-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+/* CONSTANT INPUT */
+.const-row{display:none;margin-top:8px;gap:8px;align-items:center;}
+.const-row.show{display:flex;}
+.const-row input{font-family:var(--fm);font-size:12px;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:7px 10px;outline:none;width:110px;}
+.const-row input:focus{border-color:var(--a2);}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--surface);}
+::-webkit-scrollbar-thumb{background:var(--border);}
+::-webkit-scrollbar-thumb:hover{background:var(--a2);}
+</style>
+</head>
+<body>
+<div class="ctn">
+
+<div class="hrow">
+  <div>
+    <div class="tag">v2.0 — Pedagogie Data Science</div>
+    <h1>Data <span>Cleaning</span></h1>
+    <p class="hdesc">11 categories de nettoyage — visualisation avant/apres avec datasets pedagogiques integres. Selectionnez une categorie et une methode.</p>
+  </div>
+  <div class="subnav">
+    <a class="snbtn" href="#">Standardisation</a>
+    <a class="snbtn" href="#">Normalisation</a>
+    <a class="snbtn" href="#">Outliers</a>
+    <a class="snbtn cur" href="#">Data Cleaning</a>
+  </div>
+</div>
+
+<div class="panel">
+  <span class="plabel" style="color:var(--a2);">CONTROLES</span>
+  <div class="cattabs" id="catTabs"></div>
+  <div class="row" style="margin-bottom:0;">
+    <div class="field">
+      <label>Dataset</label>
+      <select id="selDs" onchange="onDsChange()"></select>
+    </div>
+    <div class="field">
+      <label>Methode</label>
+      <select id="selMethod" onchange="onMethodChange()"></select>
+    </div>
+    <div class="const-row" id="constRow">
+      <div class="field">
+        <label>Valeur constante</label>
+        <input type="text" id="constVal" value="0" oninput="render()">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="explain" id="explainBox"></div>
+
+<div class="panel">
+  <span class="plabel" style="color:var(--a3);">STATISTIQUES</span>
+  <div class="chips" id="chips"></div>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<div class="bagrid">
+  <div class="bapanel">
+    <div class="ba-title bef">&#9654; Avant nettoyage</div>
+    <div class="twrap"><table class="dtbl" id="tBefore"></table></div>
+  </div>
+  <div class="bapanel">
+    <div class="ba-title aft">&#10003; Apres nettoyage</div>
+    <div class="twrap"><table class="dtbl" id="tAfter"></table></div>
+  </div>
+</div>
+
+</div>
+<script>
+/* ════════════════════════════════════════════════
+   UTILS (global, no scope issues)
+════════════════════════════════════════════════ */
+function isNull(v) { return v === null || v === undefined; }
+function isStrNum(v) { return typeof v === 'string' && v.trim() !== '' && !isNaN(Number(v.trim())); }
+function hasSpace(v) { return typeof v === 'string' && v !== v.trim(); }
+
+function numArr(rows, col) {
+  var a = [];
+  for (var i = 0; i < rows.length; i++) {
+    var v = rows[i][col];
+    if (!isNull(v) && !isNaN(Number(v))) a.push(Number(v));
+  }
+  return a;
+}
+function colMean(rows, col) {
+  var a = numArr(rows, col);
+  if (!a.length) return null;
+  var s = 0; for (var i = 0; i < a.length; i++) s += a[i];
+  return s / a.length;
+}
+function colMedian(rows, col) {
+  var a = numArr(rows, col).sort(function(x,y){return x-y;});
+  if (!a.length) return null;
+  var m = Math.floor(a.length / 2);
+  return a.length % 2 === 0 ? (a[m-1]+a[m])/2 : a[m];
+}
+function colMode(rows, col) {
+  var freq = {};
+  for (var i = 0; i < rows.length; i++) {
+    var v = rows[i][col];
+    if (!isNull(v)) { var k = String(v); freq[k] = (freq[k]||0)+1; }
+  }
+  var best = null, bestN = 0;
+  var keys = Object.keys(freq);
+  for (var i = 0; i < keys.length; i++) { if (freq[keys[i]] > bestN) { bestN=freq[keys[i]]; best=keys[i]; } }
+  return best;
+}
+function colStd(rows, col) {
+  var a = numArr(rows, col);
+  if (!a.length) return 0;
+  var mu = 0; for (var i=0;i<a.length;i++) mu+=a[i]; mu/=a.length;
+  var v = 0; for (var i=0;i<a.length;i++) v+=(a[i]-mu)*(a[i]-mu);
+  return Math.sqrt(v/a.length);
+}
+/* BUG2 FIX: correct quartile indexing using (n-1)*p */
+function iqrBounds(rows, col) {
+  var a = numArr(rows, col).sort(function(x,y){return x-y;});
+  if (a.length < 4) return null;
+  var q1 = a[Math.floor((a.length-1)*0.25)];
+  var q3 = a[Math.floor((a.length-1)*0.75)];
+  var iqr = q3 - q1;
+  return {lo: q1-1.5*iqr, hi: q3+1.5*iqr};
+}
+/* BUG5 FIX: use JSON for reliable deep clone */
+function deepClone(rows) {
+  return JSON.parse(JSON.stringify(rows));
+}
+/* BUG1 FIX: fmtVal uses explicit null check, not isNull reference */
+function fmtVal(v) {
+  if (v === null || v === undefined) return '<span class="c-null">null</span>';
+  if (typeof v === 'number') {
+    /* integers: no decimals */
+    if (v === Math.floor(v) && Math.abs(v) < 1e15) return String(v);
+    var abs = Math.abs(v);
+    var dec = (abs < 10) ? 4 : (abs < 1000) ? 2 : 0;
+    return v.toFixed(dec);
+  }
+  return String(v);
+}
+function fmtNum(v) {
+  if (typeof v !== 'number') return String(v);
+  /* integers: never add decimals */
+  if (v === Math.floor(v) && Math.abs(v) < 1e15) return String(v);
+  var abs = Math.abs(v);
+  /* small decimals: 4 places; medium: 2 places; large: 0 (already integer-like) */
+  var dec = (abs < 10) ? 4 : (abs < 1000) ? 2 : 0;
+  return v.toFixed(dec);
+}
+
+/* DATE UTILS ── for category 9 */
+function parseDate(str) {
+  if (!str || str === 'null') return null;
+  str = String(str).trim();
+  /* ISO: 2024-01-15 */
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  /* FR: 15/01/2024 */
+  var mFR = str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (mFR) return mFR[3]+'-'+mFR[2]+'-'+mFR[1];
+  /* Dashes FR: 22-01-2024 */
+  var mDash = str.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  if (mDash) return mDash[3]+'-'+mDash[2]+'-'+mDash[1];
+  /* Month letters: 18-Jan-2024 */
+  var MONTHS = {jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};
+  var mLet = str.match(/^(\d{2})-([A-Za-z]{3})-(\d{4})$/);
+  if (mLet) { var mo=MONTHS[mLet[2].toLowerCase()]; if(mo) return mLet[3]+'-'+mo+'-'+mLet[1]; }
+  return str; /* fallback unchanged */
+}
+function dateDiffDays(d1, d2) {
+  if (!d1 || !d2) return null;
+  var a = new Date(d1), b = new Date(d2);
+  if (isNaN(a)||isNaN(b)) return null;
+  return Math.round((b-a)/(1000*60*60*24));
+}
+
+/* ════════════════════════════════════════════════
+   DATASETS
+════════════════════════════════════════════════ */
+var DS = {
+
+/* 1 ── MISSING VALUES */
+students_missing:{
+  label:'Etudiants (valeurs manquantes)',
+  cols:['id','prenom','age','note','ville','salaire_stage'],
+  rows:[
+    {id:1,prenom:'Alice',age:22,note:14.5,ville:'Paris',salaire_stage:1200},
+    {id:2,prenom:'Bob',age:null,note:12.0,ville:'Lyon',salaire_stage:null},
+    {id:3,prenom:'Carol',age:21,note:null,ville:'Paris',salaire_stage:950},
+    {id:4,prenom:'David',age:24,note:15.0,ville:null,salaire_stage:1100},
+    {id:5,prenom:'Eve',age:22,note:null,ville:'Bordeaux',salaire_stage:null},
+    {id:6,prenom:'Frank',age:null,note:9.0,ville:'Lyon',salaire_stage:800},
+    {id:7,prenom:'Grace',age:23,note:17.0,ville:'Paris',salaire_stage:1300},
+    {id:8,prenom:'Hank',age:21,note:null,ville:'Nantes',salaire_stage:900},
+    {id:9,prenom:'Iris',age:25,note:13.0,ville:'Paris',salaire_stage:null},
+    {id:10,prenom:'Jack',age:22,note:11.0,ville:'Lyon',salaire_stage:1050},
+    {id:11,prenom:null,age:23,note:16.0,ville:'Bordeaux',salaire_stage:1150},
+    {id:12,prenom:'Lea',age:24,note:null,ville:null,salaire_stage:null}
+  ],
+  numCols:['age','note','salaire_stage'],
+  catCols:['prenom','ville']
+},
+medical_missing:{
+  label:'Patients (valeurs manquantes)',
+  cols:['id','nom','age','tension','poids','glycemie'],
+  rows:[
+    {id:1,nom:'Dupont',age:45,tension:120,poids:72,glycemie:5.2},
+    {id:2,nom:'Martin',age:null,tension:118,poids:null,glycemie:5.5},
+    {id:3,nom:'Bernard',age:38,tension:null,poids:75,glycemie:null},
+    {id:4,nom:null,age:61,tension:125,poids:80,glycemie:5.8},
+    {id:5,nom:'Petit',age:49,tension:null,poids:70,glycemie:5.3},
+    {id:6,nom:'Robert',age:55,tension:123,poids:null,glycemie:5.6},
+    {id:7,nom:'Simon',age:null,tension:121,poids:69,glycemie:null},
+    {id:8,nom:'Laurent',age:58,tension:null,poids:77,glycemie:5.9},
+    {id:9,nom:'Garcia',age:47,tension:120,poids:null,glycemie:5.4},
+    {id:10,nom:'Moreau',age:null,tension:122,poids:74,glycemie:5.5}
+  ],
+  numCols:['age','tension','poids','glycemie'],
+  catCols:['nom']
+},
+
+/* 2 ── DUPLICATES */
+sales_dup:{
+  label:'Ventes (doublons)',
+  cols:['id','client','produit','montant','date'],
+  rows:[
+    {id:1,client:'Alice',produit:'Laptop',montant:1200,date:'2024-01-15'},
+    {id:2,client:'Bob',produit:'Phone',montant:800,date:'2024-01-16'},
+    {id:3,client:'Alice',produit:'Laptop',montant:1200,date:'2024-01-15'},
+    {id:4,client:'Carol',produit:'Tablet',montant:450,date:'2024-01-17'},
+    {id:5,client:'Bob',produit:'Phone',montant:800,date:'2024-01-16'},
+    {id:6,client:'David',produit:'Laptop',montant:1100,date:'2024-01-18'},
+    {id:7,client:'Alice',produit:'Laptop',montant:1200,date:'2024-01-15'},
+    {id:8,client:'Eve',produit:'Phone',montant:750,date:'2024-01-19'},
+    {id:9,client:'Carol',produit:'Tablet',montant:450,date:'2024-01-17'},
+    {id:10,client:'Frank',produit:'Monitor',montant:350,date:'2024-01-20'},
+    {id:11,client:'David',produit:'Laptop',montant:1100,date:'2024-01-18'},
+    {id:12,client:'Grace',produit:'Keyboard',montant:80,date:'2024-01-21'}
+  ],
+  numCols:['montant'],
+  catCols:[]
+},
+
+/* 3 ── OUTLIERS */
+salary_outlier:{
+  label:'Salaires (outliers)',
+  cols:['id','nom','departement','salaire','anciennete'],
+  rows:[
+    {id:1,nom:'Alice',departement:'Dev',salaire:42000,anciennete:3},
+    {id:2,nom:'Bob',departement:'Design',salaire:38000,anciennete:2},
+    {id:3,nom:'Carol',departement:'Dev',salaire:45000,anciennete:5},
+    {id:4,nom:'David',departement:'PM',salaire:520000,anciennete:1},
+    {id:5,nom:'Eve',departement:'Dev',salaire:43000,anciennete:4},
+    {id:6,nom:'Frank',departement:'Design',salaire:36000,anciennete:1},
+    {id:7,nom:'Grace',departement:'Dev',salaire:48000,anciennete:6},
+    {id:8,nom:'Hank',departement:'PM',salaire:50000,anciennete:7},
+    {id:9,nom:'Iris',departement:'Dev',salaire:44000,anciennete:3},
+    {id:10,nom:'Jack',departement:'Design',salaire:-8000,anciennete:2},
+    {id:11,nom:'Kara',departement:'Dev',salaire:46000,anciennete:5},
+    {id:12,nom:'Leo',departement:'PM',salaire:51000,anciennete:8}
+  ],
+  numCols:['salaire','anciennete'],
+  catCols:[]
+},
+
+/* 4 ── TYPE ERRORS */
+products_type:{
+  label:'Produits (erreurs de type)',
+  cols:['id','produit','prix','stock','note_client'],
+  rows:[
+    {id:1,produit:'Laptop',prix:'1200',stock:'45',note_client:'4.5'},
+    {id:2,produit:'Phone',prix:800,stock:'23',note_client:'4.2'},
+    {id:3,produit:'Tablet',prix:'450',stock:67,note_client:'3.8'},
+    {id:4,produit:'Monitor',prix:'350',stock:'12',note_client:4.7},
+    {id:5,produit:'Keyboard',prix:80,stock:'89',note_client:'4.1'},
+    {id:6,produit:'Mouse',prix:'25',stock:134,note_client:'3.9'},
+    {id:7,produit:'Headset',prix:'120',stock:'56',note_client:'4.6'},
+    {id:8,produit:'Webcam',prix:90,stock:'34',note_client:'4.0'},
+    {id:9,produit:'SSD',prix:'150',stock:'78',note_client:4.3},
+    {id:10,produit:'RAM',prix:'80',stock:'112',note_client:'4.4'}
+  ],
+  numCols:['prix','stock','note_client'],
+  catCols:[]
+},
+
+/* 5 ── INCONSISTENT TEXT */
+employees_text:{
+  label:'Employes (texte inconsistant)',
+  cols:['id','nom','genre','pays','ville','departement'],
+  rows:[
+    {id:1,nom:'alice dupont',genre:'Female',pays:'france',ville:'paris',departement:'DEVELOPMENT'},
+    {id:2,nom:'BOB MARTIN',genre:'male',pays:'FRANCE',ville:'LYON',departement:'design'},
+    {id:3,nom:'Carol Bernard',genre:'FEMALE',pays:'France',ville:'Bordeaux',departement:'Marketing'},
+    {id:4,nom:'david petit',genre:'Male',pays:'france',ville:'NANTES',departement:'DEVELOPMENT'},
+    {id:5,nom:'EVE SIMON',genre:'female',pays:'FRANCE',ville:'paris',departement:'hr'},
+    {id:6,nom:'Frank ROBERT',genre:'MALE',pays:'france',ville:'Lyon',departement:'Design'},
+    {id:7,nom:'grace MOREAU',genre:'Female',pays:'France',ville:'BORDEAUX',departement:'MARKETING'},
+    {id:8,nom:'HANK GARCIA',genre:'male',pays:'FRANCE',ville:'nantes',departement:'development'},
+    {id:9,nom:'Iris LAURENT',genre:'FEMALE',pays:'france',ville:'Paris',departement:'HR'},
+    {id:10,nom:'jack DUBOIS',genre:'Male',pays:'France',ville:'lyon',departement:'Design'}
+  ],
+  numCols:[],
+  catCols:['nom','genre','pays','ville','departement']
+},
+
+/* 6 ── SPACES */
+clients_spaces:{
+  label:'Clients (espaces parasites)',
+  cols:['id','nom','email','ville','code_postal'],
+  rows:[
+    {id:1,nom:'  Alice Martin  ',email:'alice@mail.com ',ville:' Paris',code_postal:'75001 '},
+    {id:2,nom:'Bob   Dupont',email:' bob@mail.com',ville:'Lyon  ',code_postal:'  69001'},
+    {id:3,nom:' Carol Bernard ',email:'carol@mail.com',ville:'  Bordeaux  ',code_postal:'33000'},
+    {id:4,nom:'David  Petit',email:' david@mail.com ',ville:'Nantes ',code_postal:'44000  '},
+    {id:5,nom:'  Eve Simon',email:'eve@mail.com ',ville:' Nice',code_postal:' 06000'},
+    {id:6,nom:'Frank Robert  ',email:' frank@mail.com',ville:'Toulouse  ',code_postal:'31000 '},
+    {id:7,nom:'Grace  Moreau  ',email:'grace@mail.com ',ville:'  Marseille',code_postal:'13001  '},
+    {id:8,nom:'  Hank Garcia',email:' hank@mail.com',ville:'Strasbourg ',code_postal:'  67000'}
+  ],
+  numCols:[],
+  catCols:['nom','email','ville','code_postal']
+},
+
+/* 7 ── LOG TRANSFORM */
+revenue_log:{
+  label:'Revenus (transformation log)',
+  cols:['id','entreprise','revenu','benefice','employes'],
+  rows:[
+    {id:1,entreprise:'StartupA',revenu:15000,benefice:2000,employes:5},
+    {id:2,entreprise:'PmeB',revenu:280000,benefice:45000,employes:42},
+    {id:3,entreprise:'PmeC',revenu:95000,benefice:12000,employes:18},
+    {id:4,entreprise:'CorpD',revenu:12500000,benefice:1800000,employes:850},
+    {id:5,entreprise:'StartupE',revenu:8500,benefice:500,employes:3},
+    {id:6,entreprise:'PmeF',revenu:450000,benefice:78000,employes:65},
+    {id:7,entreprise:'CorpG',revenu:48000000,benefice:8500000,employes:3200},
+    {id:8,entreprise:'StartupH',revenu:22000,benefice:3500,employes:7},
+    {id:9,entreprise:'PmeI',revenu:180000,benefice:28000,employes:30},
+    {id:10,entreprise:'CorpJ',revenu:95000000,benefice:18000000,employes:7500}
+  ],
+  numCols:['revenu','benefice','employes'],
+  catCols:[]
+},
+
+/* 8 ── SCALING */
+sensors_scale:{
+  label:'Capteurs (echelles heterogenes)',
+  cols:['id','capteur','temp_C','pression_Pa','humidite_pct','co2_ppm'],
+  rows:[
+    {id:1,capteur:'S1',temp_C:22.4,pression_Pa:101325,humidite_pct:65,co2_ppm:412},
+    {id:2,capteur:'S2',temp_C:23.1,pression_Pa:101280,humidite_pct:72,co2_ppm:418},
+    {id:3,capteur:'S3',temp_C:21.8,pression_Pa:101400,humidite_pct:58,co2_ppm:405},
+    {id:4,capteur:'S4',temp_C:24.5,pression_Pa:101150,humidite_pct:80,co2_ppm:430},
+    {id:5,capteur:'S5',temp_C:22.0,pression_Pa:101350,humidite_pct:61,co2_ppm:410},
+    {id:6,capteur:'S6',temp_C:23.8,pression_Pa:101200,humidite_pct:75,co2_ppm:425},
+    {id:7,capteur:'S7',temp_C:21.5,pression_Pa:101450,humidite_pct:55,co2_ppm:402},
+    {id:8,capteur:'S8',temp_C:25.2,pression_Pa:101100,humidite_pct:82,co2_ppm:435},
+    {id:9,capteur:'S9',temp_C:22.7,pression_Pa:101310,humidite_pct:68,co2_ppm:415},
+    {id:10,capteur:'S10',temp_C:23.4,pression_Pa:101260,humidite_pct:70,co2_ppm:420}
+  ],
+  numCols:['temp_C','pression_Pa','humidite_pct','co2_ppm'],
+  catCols:[]
+},
+
+/* 9 ── DATES MIXTES */
+dates_mixed:{
+  label:'Commandes (formats de dates mixtes)',
+  cols:['id','client','date_commande','date_livraison','montant'],
+  rows:[
+    {id:1,client:'Alice',date_commande:'2024-01-10',date_livraison:'2024-01-15',montant:1200},
+    {id:2,client:'Bob',date_commande:'15/01/2024',date_livraison:'22/01/2024',montant:800},
+    {id:3,client:'Carol',date_commande:'20-01-2024',date_livraison:null,montant:450},
+    {id:4,client:'David',date_commande:'18-Jan-2024',date_livraison:'25-Jan-2024',montant:1100},
+    {id:5,client:'Eve',date_commande:'2024-01-22',date_livraison:'29/01/2024',montant:670},
+    {id:6,client:'Frank',date_commande:'25/01/2024',date_livraison:null,montant:340},
+    {id:7,client:'Grace',date_commande:'28-01-2024',date_livraison:'04-Feb-2024',montant:920},
+    {id:8,client:'Hank',date_commande:'2024-02-01',date_livraison:'2024-02-08',montant:560},
+    {id:9,client:'Iris',date_commande:'03/02/2024',date_livraison:null,montant:780},
+    {id:10,client:'Jack',date_commande:'07-Feb-2024',date_livraison:'14-Feb-2024',montant:430}
+  ],
+  numCols:['montant'],
+  catCols:[]
+},
+
+/* 10 ── CATEGORICAL ENCODING */
+categories_encoding:{
+  label:'Produits (encodage categoriel)',
+  cols:['id','produit','categorie','marque','region','prix'],
+  rows:[
+    {id:1,produit:'Laptop Pro',categorie:'Electronique',marque:'TechA',region:'Nord',prix:1200},
+    {id:2,produit:'Chaise Bureau',categorie:'Mobilier',marque:'FurnB',region:'Sud',prix:350},
+    {id:3,produit:'Smartphone X',categorie:'Electronique',marque:'TechA',region:'Est',prix:800},
+    {id:4,produit:'Bureau Bois',categorie:'Mobilier',marque:'FurnC',region:'Nord',prix:600},
+    {id:5,produit:'Tablet Ultra',categorie:'Electronique',marque:'TechB',region:'Ouest',prix:650},
+    {id:6,produit:'Lampe LED',categorie:'Decoration',marque:'DecoA',region:'Sud',prix:45},
+    {id:7,produit:'Laptop Air',categorie:'Electronique',marque:'TechA',region:'Nord',prix:1100},
+    {id:8,produit:'Canape',categorie:'Mobilier',marque:'FurnB',region:'Est',prix:900},
+    {id:9,produit:'Ecran 4K',categorie:'Electronique',marque:'TechB',region:'Sud',prix:480},
+    {id:10,produit:'Tapis',categorie:'Decoration',marque:'DecoB',region:'Ouest',prix:120},
+    {id:11,produit:'Casque BT',categorie:'Electronique',marque:'TechA',region:'Nord',prix:220},
+    {id:12,produit:'Etagere',categorie:'Mobilier',marque:'FurnC',region:'Est',prix:280}
+  ],
+  numCols:['prix'],
+  catCols:['categorie','marque','region']
+},
+
+/* 11 ── SEMANTIC ERRORS */
+semantic_errors:{
+  label:'Employes (incoherences semantiques)',
+  cols:['id','nom','age','salaire','date_naissance','date_embauche'],
+  rows:[
+    {id:1,nom:'Alice',age:28,salaire:42000,date_naissance:'1996-03-15',date_embauche:'2020-06-01'},
+    {id:2,nom:'Bob',age:-5,salaire:38000,date_naissance:'1985-07-22',date_embauche:'2010-03-15'},
+    {id:3,nom:'Carol',age:35,salaire:-2000,date_naissance:'1989-11-08',date_embauche:'2015-09-01'},
+    {id:4,nom:'David',age:145,salaire:45000,date_naissance:'1978-02-14',date_embauche:'2005-01-10'},
+    {id:5,nom:'Eve',age:31,salaire:40000,date_naissance:'2005-06-20',date_embauche:'1999-08-15'},
+    {id:6,nom:'Frank',age:42,salaire:55000,date_naissance:'1982-09-03',date_embauche:'2008-04-20'},
+    {id:7,nom:'Grace',age:-12,salaire:48000,date_naissance:'1990-12-25',date_embauche:'2016-07-01'},
+    {id:8,nom:'Hank',age:38,salaire:-500,date_naissance:'1986-04-11',date_embauche:'2012-11-05'},
+    {id:9,nom:'Iris',age:200,salaire:52000,date_naissance:'1992-08-17',date_embauche:'2018-02-28'},
+    {id:10,nom:'Jack',age:45,salaire:60000,date_naissance:'2010-01-30',date_embauche:'2003-06-14'}
+  ],
+  numCols:['age','salaire'],
+  catCols:[]
+}
+
+};
+
+/* ════════════════════════════════════════════════
+   CATEGORIES
+════════════════════════════════════════════════ */
+var CATS = [
+  {id:'missing', label:'1. Valeurs Manquantes', cc:'cc1',
+   datasets:['students_missing','medical_missing'],
+   methods:[
+     {id:'drop_rows',label:'Supprimer les lignes'},
+     {id:'imp_mean',label:'Moyenne'},
+     {id:'imp_median',label:'Mediane'},
+     {id:'imp_mode',label:'Mode'},
+     {id:'imp_const',label:'Valeur constante'}
+   ]},
+  {id:'duplicates', label:'2. Doublons', cc:'cc2',
+   datasets:['sales_dup'],
+   methods:[{id:'drop_dup',label:'Supprimer les doublons'}]},
+  {id:'outliers', label:'3. Outliers', cc:'cc3',
+   datasets:['salary_outlier'],
+   methods:[
+     {id:'out_drop',label:'Supprimer (IQR)'},
+     {id:'out_cap',label:'Capping (IQR)'},
+     {id:'out_median',label:'Remplacer par la mediane'}
+   ]},
+  {id:'types', label:'4. Erreurs de Type', cc:'cc4',
+   datasets:['products_type'],
+   methods:[{id:'to_num',label:'Convertir en numerique'}]},
+  {id:'text', label:'5. Texte Inconsistant', cc:'cc5',
+   datasets:['employees_text'],
+   methods:[
+     {id:'txt_lower',label:'Minuscules'},
+     {id:'txt_upper',label:'Majuscules'},
+     {id:'txt_cap',label:'Capitaliser'}
+   ]},
+  {id:'spaces', label:'6. Espaces', cc:'cc6',
+   datasets:['clients_spaces'],
+   methods:[{id:'trim',label:'Supprimer les espaces'}]},
+  {id:'log', label:'7. Log Transform', cc:'cc7',
+   datasets:['revenue_log'],
+   methods:[{id:'log1p',label:'log(1 + X)'}]},
+  {id:'scaling', label:'8. Standardisation', cc:'cc8',
+   datasets:['sensors_scale'],
+   methods:[{id:'zscore',label:'Z-Score (μ=0, σ=1)'}]},
+  {id:'dates', label:'9. Donnees Temporelles', cc:'cc9',
+   datasets:['dates_mixed'],
+   methods:[
+     {id:'date_parse',label:'Parser → ISO'},
+     {id:'date_extract',label:'Extraire (annee/mois/jour)'},
+     {id:'date_diff',label:'Calculer ecarts (jours)'},
+     {id:'date_fill_fwd',label:'Remplir avant (forward fill)'},
+     {id:'date_fill_bwd',label:'Remplir apres (backward fill)'}
+   ]},
+  {id:'encoding', label:'10. Encodage Categoriel', cc:'cc10',
+   datasets:['categories_encoding'],
+   methods:[
+     {id:'enc_onehot',label:'One-Hot Encoding'},
+     {id:'enc_label',label:'Label Encoding'},
+     {id:'enc_freq',label:'Encodage par frequence'}
+   ]},
+  {id:'semantic', label:'11. Coherence Semantique', cc:'cc11',
+   datasets:['semantic_errors'],
+   methods:[
+     {id:'sem_age',label:'Age coherent (0-120)'},
+     {id:'sem_salaire',label:'Salaire positif'},
+     {id:'sem_date',label:'Date naissance < embauche'},
+     {id:'sem_all',label:'Toutes les regles'}
+   ]}
+];
+
+var EXPLAINS = {
+  drop_rows:  'Supprime toutes les lignes contenant au moins une valeur manquante (null). Simple mais peut reduire le dataset significativement.',
+  imp_mean:   'Remplace chaque valeur manquante par la moyenne arithmetique de la colonne. Preserve la taille du dataset mais peut reduire la variance.',
+  imp_median: 'Remplace par la mediane de la colonne. Plus robuste que la moyenne en presence d\'autres outliers.',
+  imp_mode:   'Remplace par la valeur la plus frequente (mode). Adapte aux colonnes categoriques et discretes.',
+  imp_const:  'Remplace toutes les valeurs manquantes par une valeur fixe definie (ex: 0). Utile quand le manque a une signification specifique.',
+  drop_dup:   'Identifie les lignes strictement identiques (hors colonne id) et ne conserve que la premiere occurrence. Les doublons sont supprimes.',
+  out_drop:   'Calcule les bornes IQR : Q1 - 1.5*IQR et Q3 + 1.5*IQR. Supprime toutes les lignes dont au moins une valeur est hors bornes.',
+  out_cap:    'Meme bornes IQR mais ramene les valeurs extremes exactement aux bornes (winsorisation). Conserve toutes les lignes.',
+  out_median: 'Remplace les valeurs aberrantes par la mediane de la colonne. Conserve toutes les lignes.',
+  to_num:     'Detecte les nombres stockes en chaine de caracteres ("123" a 123). Requis avant tout calcul mathematique ou modelisation.',
+  txt_lower:  'Convertit tout le texte en minuscules : France, FRANCE, france a france. Harmonise pour les jointures et groupby.',
+  txt_upper:  'Convertit en MAJUSCULES. Courant pour les codes produits et identifiants standardises.',
+  txt_cap:    'Premiere lettre majuscule uniquement : alice martin a Alice Martin. Convenable pour les noms propres.',
+  trim:       'Supprime les espaces superflus en debut et fin de chaine. Cause tres frequente d\'erreurs de jointure.',
+  log1p:      'Applique log(1 + X) a toutes les valeurs numeriques. Compresse les distributions etalees vers la droite.',
+  zscore:     'X_std = (X - mu) / sigma. Ramene chaque variable a moyenne=0 et ecart-type=1. Indispensable quand les unites sont incompatibles.',
+  date_parse: 'Detecte et convertit automatiquement les formats mixtes (DD/MM/YYYY, DD-MM-YYYY, DD-Mon-YYYY, YYYY-MM-DD) vers le standard ISO 8601 (YYYY-MM-DD). Prerequis a tout calcul temporel.',
+  date_extract:'Extrait les composantes annee, mois et jour de chaque date en colonnes separees. Utile pour les analyses temporelles (tendances mensuelles, saisonnalite).',
+  date_diff:  'Calcule l\'ecart en jours entre date_commande et date_livraison. Les valeurs null sont preservees. Utile pour mesurer les delais de livraison.',
+  date_fill_fwd:'Remplace les dates null par la derniere date connue precedente (forward fill). Hypothese : si la date est manquante, on utilise la valeur la plus recente disponible.',
+  date_fill_bwd:'Remplace les dates null par la prochaine date connue suivante (backward fill). Hypothese : si la date est manquante, on utilise la prochaine valeur disponible.',
+  enc_onehot: 'Cree une colonne binaire (0/1) par valeur unique de chaque colonne categorielle. Produit beaucoup de colonnes mais aucune relation ordinale implicite. Adapte aux algorithmes lineaires.',
+  enc_label:  'Assigne un entier a chaque valeur categorielle (tri alphabetique). Simple et compact mais introduit un ordre artificiel. A eviter pour les categories sans ordre naturel.',
+  enc_freq:   'Remplace chaque categorie par sa frequence relative (nombre d\'occurrences / total). Capture la popularite de chaque categorie sans creer de nouvelles colonnes.',
+  sem_age:    'Detecte les ages hors de la plage biologique [0, 120]. Les valeurs aberrantes sont remplacees par la mediane des ages valides. Correction semantique basee sur des contraintes metier.',
+  sem_salaire:'Detecte les salaires negatifs (impossibles physiquement). Remplace par la valeur absolue ou par 0. Une valeur negative peut indiquer une erreur de signe lors de la saisie.',
+  sem_date:   'Verifie que date_naissance < date_embauche (contrainte logique : on ne peut pas etre embauche avant de naitre). Echange les dates si inversees ou supprime la ligne.',
+  sem_all:    'Applique simultanement toutes les regles semantiques : age, salaire, et coherence des dates. Permet de voir l\'impact combine de toutes les corrections.'
+};
+
+/* ════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════ */
+var curCat  = CATS[0];
+var curDsId = CATS[0].datasets[0];
+var curMeth = CATS[0].methods[0].id;
+
+/* ════════════════════════════════════════════════
+   APPLY METHODS
+════════════════════════════════════════════════ */
+function applyMethod(dsId, method) {
+  var ds   = DS[dsId];
+  var orig = ds.rows;
+  var rows = deepClone(orig);
+  var marks = {};
+  var removedSet = {};
+  var extraCols = []; /* for methods that add new columns */
+
+  function setMark(ri, col, cls) {
+    if (!marks[ri]) marks[ri] = {};
+    marks[ri][col] = cls;
+  }
+
+  /* ── 1a. DROP ROWS ── */
+  if (method === 'drop_rows') {
+    var kept = [];
+    for (var i = 0; i < rows.length; i++) {
+      var bad = false;
+      for (var j = 0; j < ds.cols.length; j++) { if (isNull(rows[i][ds.cols[j]])) { bad=true; break; } }
+      if (bad) removedSet[i] = true;
+      else kept.push(rows[i]);
+    }
+    return {after:kept, marks:marks, removedSet:removedSet, extraCols:[]};
+  }
+
+  /* ── 1b. IMPUTATION ── */
+  if (method === 'imp_mean' || method === 'imp_median' || method === 'imp_mode' || method === 'imp_const') {
+    var constV = document.getElementById('constVal').value;
+    for (var c = 0; c < ds.cols.length; c++) {
+      var col = ds.cols[c];
+      if (col === 'id') continue;
+      var fillVal;
+      if (method === 'imp_mean')        fillVal = colMean(orig, col);
+      else if (method === 'imp_median') fillVal = colMedian(orig, col);
+      else if (method === 'imp_mode')   fillVal = colMode(orig, col);
+      else                              fillVal = constV;
+      if (fillVal === null) continue;
+      for (var i = 0; i < rows.length; i++) {
+        if (isNull(rows[i][col])) { rows[i][col] = fillVal; setMark(i, col, 'c-imputed'); }
+      }
+    }
+    return {after:rows, marks:marks, removedSet:{}, extraCols:[]};
+  }
+
+  /* ── 2. DUPLICATES ── BUG3 FIX: null-safe key */
+  if (method === 'drop_dup') {
+    var seen = {}, kept = [];
+    for (var i = 0; i < rows.length; i++) {
+      var parts = [];
+      for (var c = 0; c < ds.cols.length; c++) {
+        if (ds.cols[c] === 'id') continue;
+        var kv = rows[i][ds.cols[c]];
+        var seg;
+        if (isNull(kv)) {
+          /* null is unique per column position — two rows both having null in col c
+             ARE duplicates of each other (same column, same missing value) */
+          seg = '__NULL__';
+        } else if (typeof kv === 'number') {
+          /* canonical numeric: avoid "800" vs 800 mismatch */
+          seg = String(Number(kv));
+        } else if (typeof kv === 'string') {
+          /* normalize: trim whitespace + lowercase for case-insensitive comparison */
+          seg = kv.trim().toLowerCase();
+          /* if the trimmed string is a pure number, canonicalize it too */
+          if (seg !== '' && !isNaN(Number(seg))) seg = String(Number(seg));
+        } else {
+          seg = String(kv);
+        }
+        /* use a separator that cannot appear in values to avoid collision */
+        parts.push(seg);
+      }
+      var key = parts.join('\x00');
+      if (seen[key] !== undefined) { removedSet[i] = true; }
+      else { seen[key] = i; kept.push(rows[i]); }
+    }
+    return {after:kept, marks:marks, removedSet:removedSet, extraCols:[]};
+  }
+
+  /* ── 3. OUTLIERS ── */
+  if (method === 'out_drop' || method === 'out_cap' || method === 'out_median') {
+    var bounds = {}, meds = {};
+    for (var c = 0; c < ds.numCols.length; c++) {
+      bounds[ds.numCols[c]] = iqrBounds(orig, ds.numCols[c]);
+      meds[ds.numCols[c]]   = colMedian(orig, ds.numCols[c]);
+    }
+    if (method === 'out_drop') {
+      var kept = [];
+      for (var i = 0; i < rows.length; i++) {
+        var bad = false;
+        for (var c = 0; c < ds.numCols.length; c++) {
+          var col = ds.numCols[c]; var b = bounds[col]; var v = rows[i][col];
+          if (b && !isNull(v) && (v < b.lo || v > b.hi)) { bad=true; break; }
+        }
+        if (bad) removedSet[i] = true; else kept.push(rows[i]);
+      }
+      return {after:kept, marks:marks, removedSet:removedSet, extraCols:[]};
+    }
+    for (var i = 0; i < rows.length; i++) {
+      for (var c = 0; c < ds.numCols.length; c++) {
+        var col = ds.numCols[c]; var b = bounds[col]; var v = rows[i][col];
+        if (b && !isNull(v) && (v < b.lo || v > b.hi)) {
+          rows[i][col] = (method === 'out_cap') ? Math.max(b.lo, Math.min(b.hi, v)) : meds[col];
+          setMark(i, col, 'c-capped');
+        }
+      }
+    }
+    return {after:rows, marks:marks, removedSet:{}, extraCols:[]};
+  }
+
+  /* ── 4. TYPE CONVERSION ── */
+  if (method === 'to_num') {
+    for (var i = 0; i < rows.length; i++) {
+      for (var c = 0; c < ds.numCols.length; c++) {
+        var col = ds.numCols[c];
+        if (isStrNum(rows[i][col])) { rows[i][col] = Number(rows[i][col]); setMark(i, col, 'c-type'); }
+      }
+    }
+    return {after:rows, marks:marks, removedSet:{}, extraCols:[]};
+  }
+
+  /* ── 5. TEXT ── */
+  if (method === 'txt_lower' || method === 'txt_upper' || method === 'txt_cap') {
+    for (var i = 0; i < rows.length; i++) {
+      for (var c = 0; c < ds.catCols.length; c++) {
+        var col = ds.catCols[c]; var v = rows[i][col];
+        if (typeof v === 'string') {
+          var nv;
+          if (method === 'txt_lower') nv = v.toLowerCase();
+          else if (method === 'txt_upper') nv = v.toUpperCase();
+          else nv = v.toLowerCase().replace(/(^|\s)\S/g, function(ch){ return ch.toUpperCase(); });
+          if (nv !== v) { rows[i][col] = nv; setMark(i, col, 'c-text'); }
+        }
+      }
+    }
+    return {after:rows, marks:marks, removedSet:{}, extraCols:[]};
+  }
+
+  /* ── 6. TRIM ── BUG4 FIX: typeof check already in hasSpace() */
+  if (method === 'trim') {
+    for (var i = 0; i < rows.length; i++) {
+      for (var c = 0; c < ds.cols.length; c++) {
+        var col = ds.cols[c]; var v = rows[i][col];
+        if (typeof v === 'string' && hasSpace(v)) { rows[i][col] = v.trim(); setMark(i, col, 'c-space'); }
+      }
+    }
+    return {after:rows, marks:marks, removedSet:{}, extraCols:[]};
+  }
+
+  /* ── 7. LOG ── */
+  if (method === 'log1p') {
+    for (var i = 0; i < rows.length; i++) {
+      for (var c = 0; c < ds.numCols.length; c++) {
+        var col = ds.numCols[c]; var v = rows[i][col];
+        if (typeof v === 'number') { rows[i][col] = Math.log(1+Math.abs(v)); setMark(i, col, 'c-log'); }
+      }
+    }
+    return {after:rows, marks:marks, removedSet:{}, extraCols:[]};
+  }
+
+  /* ── 8. Z-SCORE ── */
+  if (method === 'zscore') {
+    var stats = {};
+    for (var c = 0; c < ds.numCols.length; c++) {
+      var col = ds.numCols[c];
+      stats[col] = {mu: colMean(orig, col), sigma: colStd(orig, col)};
+    }
+    for (var i = 0; i < rows.length; i++) {
+      for (var c = 0; c < ds.numCols.length; c++) {
+        var col = ds.numCols[c]; var v = rows[i][col];
+        var sig = stats[col].sigma;
+        if (typeof v === 'number' && sig !== 0) { rows[i][col] = (v - stats[col].mu)/sig; setMark(i, col, 'c-scale'); }
+      }
+    }
+    return {after:rows, marks:marks, removedSet:{}, extraCols:[]};
+  }
+
+  /* ══════════════════════════════════════════════
+     ── 9. DATES ──
+  ══════════════════════════════════════════════ */
+  if (method === 'date_parse') {
+    for (var i = 0; i < rows.length; i++) {
+      for (var c = 0; c < ds.cols.length; c++) {
+        var col = ds.cols[c]; var v = rows[i][col];
+        if (!isNull(v) && typeof v === 'string' && col !== 'id' && col !== 'client' && isNaN(Number(v))) {
+          var parsed = parseDate(v);
+          if (parsed !== v) { rows[i][col] = parsed; setMark(i, col, 'c-date'); }
+        }
+      }
+    }
+    return {after:rows, marks:marks, removedSet:{}, extraCols:[]};
+  }
+
+  if (method === 'date_extract') {
+    /* first parse all dates, then extract components */
+    var newCols = [];
+    var dateCols = ['date_commande','date_livraison'];
+    for (var d = 0; d < dateCols.length; d++) {
+      var dcol = dateCols[d];
+      if (ds.cols.indexOf(dcol) === -1) continue;
+      newCols.push(dcol+'_annee', dcol+'_mois', dcol+'_jour');
+    }
+    for (var i = 0; i < rows.length; i++) {
+      for (var d = 0; d < dateCols.length; d++) {
+        var dcol = dateCols[d];
+        if (ds.cols.indexOf(dcol) === -1) continue;
+        var raw = rows[i][dcol];
+        var iso = isNull(raw) ? null : parseDate(String(raw));
+        if (iso && /^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+          var parts = iso.split('-');
+          rows[i][dcol+'_annee'] = parseInt(parts[0]);
+          rows[i][dcol+'_mois']  = parseInt(parts[1]);
+          rows[i][dcol+'_jour']  = parseInt(parts[2]);
+          setMark(i, dcol+'_annee', 'c-date-new');
+          setMark(i, dcol+'_mois',  'c-date-new');
+          setMark(i, dcol+'_jour',  'c-date-new');
+        } else {
+          rows[i][dcol+'_annee'] = null;
+          rows[i][dcol+'_mois']  = null;
+          rows[i][dcol+'_jour']  = null;
+        }
+      }
+    }
+    return {after:rows, marks:marks, removedSet:{}, extraCols:newCols};
+  }
+
+  if (method === 'date_diff') {
+    var newCols = ['delai_livraison_jours'];
+    for (var i = 0; i < rows.length; i++) {
+      var d1 = isNull(rows[i].date_commande) ? null : parseDate(String(rows[i].date_commande));
+      var d2 = isNull(rows[i].date_livraison) ? null : parseDate(String(rows[i].date_livraison));
+      var diff = dateDiffDays(d1, d2);
+      rows[i].delai_livraison_jours = diff;
+      if (diff !== null) setMark(i, 'delai_livraison_jours', 'c-date-new');
+    }
+    return {after:rows, marks:marks, removedSet:{}, extraCols:newCols};
+  }
+
+  if (method === 'date_fill_fwd' || method === 'date_fill_bwd') {
+    var dateCols2 = ['date_commande','date_livraison'];
+    if (method === 'date_fill_fwd') {
+      for (var d = 0; d < dateCols2.length; d++) {
+        var dcol = dateCols2[d]; var last = null;
+        for (var i = 0; i < rows.length; i++) {
+          if (!isNull(rows[i][dcol])) last = rows[i][dcol];
+          else if (last !== null) { rows[i][dcol] = last; setMark(i, dcol, 'c-date'); }
+        }
+      }
+    } else {
+      for (var d = 0; d < dateCols2.length; d++) {
+        var dcol = dateCols2[d]; var next = null;
+        for (var i = rows.length-1; i >= 0; i--) {
+          if (!isNull(rows[i][dcol])) next = rows[i][dcol];
+          else if (next !== null) { rows[i][dcol] = next; setMark(i, dcol, 'c-date'); }
+        }
+      }
+    }
+    return {after:rows, marks:marks, removedSet:{}, extraCols:[]};
+  }
+
+  /* ══════════════════════════════════════════════
+     ── 10. ENCODING ──
+  ══════════════════════════════════════════════ */
+  if (method === 'enc_onehot') {
+    var newCols = [];
+    /* only encode 'categorie' for readability */
+    var encCol = 'categorie';
+    var uniq = [];
+    for (var i = 0; i < orig.length; i++) {
+      var v = orig[i][encCol];
+      if (!isNull(v) && uniq.indexOf(String(v)) === -1) uniq.push(String(v));
+    }
+    uniq.sort();
+    for (var u = 0; u < uniq.length; u++) {
+      var nc = encCol+'_'+uniq[u].replace(/\s/g,'_');
+      newCols.push(nc);
+      for (var i = 0; i < rows.length; i++) {
+        rows[i][nc] = (rows[i][encCol] === uniq[u]) ? 1 : 0;
+        setMark(i, nc, 'c-encoding');
+      }
+    }
+    return {after:rows, marks:marks, removedSet:{}, extraCols:newCols};
+  }
+
+  if (method === 'enc_label') {
+    var newCols = [];
+    var encCols = ds.catCols;
+    for (var c = 0; c < encCols.length; c++) {
+      var col = encCols[c];
+      var uniq = [];
+      for (var i = 0; i < orig.length; i++) {
+        var v = orig[i][col];
+        if (!isNull(v) && uniq.indexOf(String(v)) === -1) uniq.push(String(v));
+      }
+      uniq.sort();
+      var nc = col+'_label';
+      newCols.push(nc);
+      for (var i = 0; i < rows.length; i++) {
+        var v = rows[i][col];
+        rows[i][nc] = isNull(v) ? null : (uniq.indexOf(String(v))+1);
+        setMark(i, nc, 'c-encoding');
+      }
+    }
+    return {after:rows, marks:marks, removedSet:{}, extraCols:newCols};
+  }
+
+  if (method === 'enc_freq') {
+    var newCols = [];
+    var encCols = ds.catCols;
+    for (var c = 0; c < encCols.length; c++) {
+      var col = encCols[c];
+      var freq = {};
+      for (var i = 0; i < orig.length; i++) {
+        var v = orig[i][col];
+        if (!isNull(v)) { var k=String(v); freq[k]=(freq[k]||0)+1; }
+      }
+      var nc = col+'_freq';
+      newCols.push(nc);
+      for (var i = 0; i < rows.length; i++) {
+        var v = rows[i][col];
+        rows[i][nc] = isNull(v) ? null : +(freq[String(v)] / orig.length).toFixed(4);
+        setMark(i, nc, 'c-encoding');
+      }
+    }
+    return {after:rows, marks:marks, removedSet:{}, extraCols:newCols};
+  }
+
+  /* ══════════════════════════════════════════════
+     ── 11. SEMANTIC ──
+  ══════════════════════════════════════════════ */
+  function applyAge(rows, marks, orig) {
+    var validAges = [];
+    for (var i = 0; i < orig.length; i++) { var a=orig[i].age; if(typeof a==='number'&&a>=0&&a<=120) validAges.push(a); }
+    var medAge = 0;
+    if (validAges.length) { var s=validAges.slice().sort(function(a,b){return a-b;}); medAge=s[Math.floor(s.length/2)]; }
+    for (var i = 0; i < rows.length; i++) {
+      var a = rows[i].age;
+      if (typeof a === 'number' && (a < 0 || a > 120)) { rows[i].age = medAge; setMark(i, 'age', 'c-semantic'); }
+    }
+  }
+  function applySalaire(rows, marks) {
+    for (var i = 0; i < rows.length; i++) {
+      var s = rows[i].salaire;
+      if (typeof s === 'number' && s < 0) { rows[i].salaire = 0; setMark(i, 'salaire', 'c-semantic'); }
+    }
+  }
+  function applyDateOrder(rows, marks) {
+    for (var i = 0; i < rows.length; i++) {
+      var dn = rows[i].date_naissance, de = rows[i].date_embauche;
+      if (dn && de && dn >= de) {
+        /* swap */
+        rows[i].date_naissance = de; rows[i].date_embauche = dn;
+        setMark(i, 'date_naissance', 'c-semantic'); setMark(i, 'date_embauche', 'c-semantic');
+      }
+    }
+  }
+
+  if (method === 'sem_age') { applyAge(rows, marks, orig); return {after:rows, marks:marks, removedSet:{}, extraCols:[]}; }
+  if (method === 'sem_salaire') { applySalaire(rows, marks); return {after:rows, marks:marks, removedSet:{}, extraCols:[]}; }
+  if (method === 'sem_date') { applyDateOrder(rows, marks); return {after:rows, marks:marks, removedSet:{}, extraCols:[]}; }
+  if (method === 'sem_all') {
+    applyAge(rows, marks, orig);
+    applySalaire(rows, marks);
+    applyDateOrder(rows, marks);
+    return {after:rows, marks:marks, removedSet:{}, extraCols:[]};
+  }
+
+  return {after:rows, marks:{}, removedSet:{}, extraCols:[]};
+}
+
+/* ════════════════════════════════════════════════
+   BUILD TABLE HTML
+════════════════════════════════════════════════ */
+function buildBefore(ds, result) {
+  var cols = ds.cols;
+  var orig = ds.rows;
+  var h = '<thead><tr><th>#</th>';
+  for (var c = 0; c < cols.length; c++) h += '<th>' + cols[c] + '</th>';
+  h += '</tr></thead><tbody>';
+
+  for (var i = 0; i < orig.length; i++) {
+    var isRm  = result.removedSet[i];
+    var isDup = (curMeth === 'drop_dup') && isRm;
+    var trCls = isRm ? (isDup ? 'c-dup' : 'c-removed') : '';
+    h += '<tr class="' + trCls + '"><td class="idx">' + (i+1) + '</td>';
+
+    for (var c = 0; c < cols.length; c++) {
+      var col = cols[c]; var v = orig[i][col];
+      var tdCls = ''; var disp;
+
+      if (isNull(v)) {
+        tdCls = 'c-null'; disp = 'null';
+      } else {
+        /* semantic: mark bad values in before table */
+        if (curCat.id === 'semantic') {
+          if (col === 'age' && typeof v === 'number' && (v < 0 || v > 120)) tdCls = 'c-sem-bad';
+          else if (col === 'salaire' && typeof v === 'number' && v < 0) tdCls = 'c-sem-bad';
+          else if ((col === 'date_naissance' || col === 'date_embauche') && orig[i].date_naissance && orig[i].date_embauche && orig[i].date_naissance >= orig[i].date_embauche) tdCls = 'c-sem-bad';
+        }
+        /* other highlights in before */
+        if (tdCls === '') {
+          if (result.marks[i] && result.marks[i][col]) {
+            if (curMeth === 'to_num' && isStrNum(v)) tdCls = 'c-type';
+            else if ((curMeth==='txt_lower'||curMeth==='txt_upper'||curMeth==='txt_cap') && typeof v==='string') {
+              var test = curMeth==='txt_lower'?v.toLowerCase():curMeth==='txt_upper'?v.toUpperCase():v.toLowerCase().replace(/(^|\s)\S/g,function(ch){return ch.toUpperCase();});
+              if (test !== v) tdCls = 'c-text';
+            }
+            else if (curMeth === 'trim' && typeof v === 'string' && hasSpace(v)) tdCls = 'c-space';
+            else if (curMeth === 'out_cap' || curMeth === 'out_median') {
+              var b = iqrBounds(orig, col);
+              if (b && typeof v === 'number' && (v<b.lo||v>b.hi)) tdCls = 'c-outlier';
+            }
+          }
+          if (curMeth === 'out_drop' && isRm && typeof v === 'number') {
+            var b2 = iqrBounds(orig, col);
+            if (b2 && (v<b2.lo||v>b2.hi)) tdCls = 'c-outlier';
+          }
+        }
+
+        if (typeof v === 'number') disp = fmtNum(v);
+        else disp = (typeof v === 'string' && isStrNum(v)) ? '«' + v + '»' : String(v);
+        if (typeof v === 'string' && hasSpace(v) && curMeth === 'trim') {
+          tdCls = 'c-space';
+          disp = '«' + String(v).replace(/ /g, '·') + '»';
+        }
+      }
+      h += '<td class="' + tdCls + '">' + disp + '</td>';
+    }
+    h += '</tr>';
+  }
+  return h + '</tbody>';
+}
+
+function buildAfter(ds, result) {
+  /* merge original cols + extra cols from method */
+  var cols  = ds.cols.concat(result.extraCols);
+  var after = result.after;
+  var marks = result.marks;
+
+  var h = '<thead><tr><th>#</th>';
+  for (var c = 0; c < cols.length; c++) {
+    var isNew = (result.extraCols.indexOf(cols[c]) > -1);
+    h += '<th' + (isNew ? ' style="color:var(--a5)"' : '') + '>' + cols[c] + '</th>';
+  }
+  h += '</tr></thead><tbody>';
+
+  var isRemoval = (curMeth === 'drop_rows' || curMeth === 'drop_dup' || curMeth === 'out_drop');
+
+  for (var i = 0; i < after.length; i++) {
+    h += '<tr><td class="idx">' + (i+1) + '</td>';
+    for (var c = 0; c < cols.length; c++) {
+      var col = cols[c]; var v = after[i][col];
+      var tdCls = '';
+      if (marks[i] && marks[i][col]) tdCls = marks[i][col];
+      h += '<td class="' + tdCls + '">' + fmtVal(v) + '</td>';
+    }
+    h += '</tr>';
+  }
+  return h + '</tbody>';
+}
+
+/* ════════════════════════════════════════════════
+   STATS CHIPS
+════════════════════════════════════════════════ */
+function renderChips(ds, result) {
+  var orig = ds.rows;
+
+  var missBefore = 0;
+  for (var i = 0; i < orig.length; i++) {
+    for (var c = 0; c < ds.cols.length; c++) { if (isNull(orig[i][ds.cols[c]])) missBefore++; }
+  }
+  var missAfter = 0;
+  for (var i = 0; i < result.after.length; i++) {
+    for (var c = 0; c < ds.cols.length; c++) { if (isNull(result.after[i][ds.cols[c]])) missAfter++; }
+  }
+  var typesBefore = 0;
+  for (var i = 0; i < orig.length; i++) {
+    for (var c = 0; c < ds.numCols.length; c++) { if (isStrNum(orig[i][ds.numCols[c]])) typesBefore++; }
+  }
+  var spacesBefore = 0;
+  for (var i = 0; i < orig.length; i++) {
+    for (var c = 0; c < ds.cols.length; c++) { var v=orig[i][ds.cols[c]]; if(typeof v==='string'&&hasSpace(v)) spacesBefore++; }
+  }
+  var dupsBefore = (curMeth === 'drop_dup') ? Object.keys(result.removedSet).length : 0;
+
+  /* Category-specific stats */
+  var extraItems = [];
+
+  if (curCat.id === 'dates') {
+    var formats = {};
+    for (var i = 0; i < orig.length; i++) {
+      for (var c = 0; c < ds.cols.length; c++) {
+        var v = orig[i][ds.cols[c]];
+        if (isNull(v) || typeof v !== 'string') continue;
+        var col = ds.cols[c];
+        if (col === 'id' || col === 'client' || !isNaN(Number(v))) continue;
+        var fmt;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(v)) fmt = 'ISO';
+        else if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) fmt = 'DD/MM/YYYY';
+        else if (/^\d{2}-\d{2}-\d{4}$/.test(v)) fmt = 'DD-MM-YYYY';
+        else if (/^\d{2}-[A-Za-z]{3}-\d{4}$/.test(v)) fmt = 'DD-Mon-YYYY';
+        else fmt = 'autre';
+        formats[fmt] = (formats[fmt]||0)+1;
+      }
+    }
+    extraItems.push({lbl:'Formats differents', val: Object.keys(formats).length, cls:'ca2'});
+    extraItems.push({lbl:'Dates nulles', val: missBefore, cls:'ca1'});
+  }
+
+  if (curCat.id === 'encoding') {
+    var totalUniq = 0;
+    for (var c = 0; c < ds.catCols.length; c++) {
+      var seen = {};
+      for (var i = 0; i < orig.length; i++) { var v=orig[i][ds.catCols[c]]; if(!isNull(v)) seen[v]=1; }
+      totalUniq += Object.keys(seen).length;
+    }
+    extraItems.push({lbl:'Valeurs uniques totales', val: totalUniq, cls:'ca5'});
+    extraItems.push({lbl:'Colonnes encodees', val: ds.catCols.length, cls:'ca2'});
+    extraItems.push({lbl:'Nouvelles colonnes', val: result.extraCols.length, cls:'ca5'});
+  }
+
+  if (curCat.id === 'semantic') {
+    var badAge=0, badSal=0, badDates=0;
+    for (var i = 0; i < orig.length; i++) {
+      var a=orig[i].age; if(typeof a==='number'&&(a<0||a>120)) badAge++;
+      var s=orig[i].salaire; if(typeof s==='number'&&s<0) badSal++;
+      if(orig[i].date_naissance&&orig[i].date_embauche&&orig[i].date_naissance>=orig[i].date_embauche) badDates++;
+    }
+    extraItems.push({lbl:'Ages invalides', val: badAge, cls:'ca1'});
+    extraItems.push({lbl:'Salaires negatifs', val: badSal, cls:'ca1'});
+    extraItems.push({lbl:'Dates incoherentes', val: badDates, cls:'ca4'});
+  }
+
+  var items = [
+    {lbl:'Lignes avant', val: orig.length, cls:'cw'},
+    {lbl:'Lignes apres', val: result.after.length, cls:'ca3'},
+    {lbl:'Lignes modifiees', val: Object.keys(result.removedSet).length, cls:'ca1'},
+    {lbl:'Valeurs null avant', val: missBefore, cls:'ca4'}
+  ];
+  if (missAfter !== missBefore) items.push({lbl:'Null apres', val: missAfter, cls:'ca3'});
+  if (typesBefore > 0) items.push({lbl:'Erreurs de type', val: typesBefore, cls:'ca4'});
+  if (spacesBefore > 0 && curMeth === 'trim') items.push({lbl:'Espaces nettoyes', val: spacesBefore, cls:'ca5'});
+  if (dupsBefore > 0) items.push({lbl:'Doublons supprimes', val: dupsBefore, cls:'ca1'});
+  for (var e = 0; e < extraItems.length; e++) items.push(extraItems[e]);
+
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    html += '<div class="chip"><div class="chip-lbl">' + items[i].lbl + '</div><div class="chip-val ' + items[i].cls + '">' + items[i].val + '</div></div>';
+  }
+  document.getElementById('chips').innerHTML = html;
+}
+
+/* ════════════════════════════════════════════════
+   LEGEND
+════════════════════════════════════════════════ */
+var LEGENDS = {
+  missing:   [{c:'var(--a1)',l:'Valeur null'},{c:'var(--a3)',l:'Valeur imputee'}],
+  duplicates:[{c:'rgba(255,60,120,.4)',l:'Ligne dupliquee (avant)'},{c:'var(--muted)',l:'Supprimee dans apres'}],
+  outliers:  [{c:'var(--a1)',l:'Outlier detecte'},{c:'var(--a4)',l:'Valeur corrigee'}],
+  types:     [{c:'var(--a4)',l:'Nombre stocke en string'},{c:'var(--a4)',l:'Converti en number'}],
+  text:      [{c:'var(--a5)',l:'Texte inconsistant'},{c:'var(--a5)',l:'Uniformise'}],
+  spaces:    [{c:'var(--a5)',l:'Espace parasite (·)'},{c:'var(--a5)',l:'Espace nettoye'}],
+  log:       [{c:'var(--a2)',l:'Valeur log-transformee'}],
+  scaling:   [{c:'var(--a3)',l:'Valeur standardisee (Z-score)'}],
+  dates:     [{c:'var(--a1)',l:'Valeur null'},{c:'var(--a2)',l:'Date parsee / remplie'},{c:'rgba(0,229,255,.5)',l:'Nouvelle colonne extraite'}],
+  encoding:  [{c:'var(--a5)',l:'Colonne encodee (nouvelle)'}],
+  semantic:  [{c:'var(--a1)',l:'Valeur semantiquement invalide'},{c:'var(--a4)',l:'Valeur corrigee'}]
+};
+
+function renderLegend() {
+  var items = LEGENDS[curCat.id] || [];
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    html += '<div class="leg"><div class="leg-dot" style="background:'+items[i].c+'"></div>'+items[i].l+'</div>';
+  }
+  document.getElementById('legend').innerHTML = html;
+}
+
+/* ════════════════════════════════════════════════
+   UI INIT
+════════════════════════════════════════════════ */
+function buildCatTabs() {
+  var html = '';
+  for (var i = 0; i < CATS.length; i++) {
+    var c = CATS[i];
+    var onCls = (c.id === curCat.id) ? ' on' : '';
+    html += '<button class="ctab ' + c.cc + onCls + '" data-cat="' + c.id + '" onclick="selectCat(this)">' + c.label + '</button>';
+  }
+  document.getElementById('catTabs').innerHTML = html;
+}
+
+function buildDsSelect() {
+  var sel = document.getElementById('selDs');
+  sel.innerHTML = '';
+  for (var i = 0; i < curCat.datasets.length; i++) {
+    var key = curCat.datasets[i];
+    var opt = document.createElement('option');
+    opt.value = key; opt.textContent = DS[key].label;
+    sel.appendChild(opt);
+  }
+  sel.value = curDsId;
+}
+
+function buildMethodSelect() {
+  var sel = document.getElementById('selMethod');
+  sel.innerHTML = '';
+  for (var i = 0; i < curCat.methods.length; i++) {
+    var m = curCat.methods[i];
+    var opt = document.createElement('option');
+    opt.value = m.id; opt.textContent = m.label;
+    sel.appendChild(opt);
+  }
+  sel.value = curMeth;
+  document.getElementById('constRow').className = 'const-row' + (curMeth === 'imp_const' ? ' show' : '');
+}
+
+function selectCat(btn) {
+  var catId = btn.getAttribute('data-cat');
+  for (var i = 0; i < CATS.length; i++) { if (CATS[i].id === catId) { curCat = CATS[i]; break; } }
+  curDsId = curCat.datasets[0];
+  curMeth = curCat.methods[0].id;
+  buildCatTabs(); buildDsSelect(); buildMethodSelect(); render();
+}
+function onDsChange() { curDsId = document.getElementById('selDs').value; render(); }
+function onMethodChange() {
+  curMeth = document.getElementById('selMethod').value;
+  document.getElementById('constRow').className = 'const-row' + (curMeth === 'imp_const' ? ' show' : '');
+  render();
+}
+
+/* ════════════════════════════════════════════════
+   MAIN RENDER
+════════════════════════════════════════════════ */
+function render() {
+  var ds     = DS[curDsId];
+  var result = applyMethod(curDsId, curMeth);
+  var eb = document.getElementById('explainBox');
+  var ex = EXPLAINS[curMeth];
+  eb.textContent = ex || '';
+  eb.style.display = ex ? 'block' : 'none';
+  renderChips(ds, result);
+  renderLegend();
+  document.getElementById('tBefore').innerHTML = buildBefore(ds, result);
+  document.getElementById('tAfter').innerHTML  = buildAfter(ds, result);
+}
+
+/* BOOT */
+buildCatTabs(); buildDsSelect(); buildMethodSelect(); render();
+</script>
+</body>
+</html>

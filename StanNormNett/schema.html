@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prétraitement des Données — Carte Mentale Complète</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#07090f;
+  --surface:#0d1117;
+  --surface2:#131920;
+  --std:#ff4d6d;
+  --std-dim:rgba(255,77,109,0.12);
+  --std-border:rgba(255,77,109,0.3);
+  --std-glow:rgba(255,77,109,0.2);
+  --std-soft:#ff8fa3;
+  --norm:#00c896;
+  --norm-dim:rgba(0,200,150,0.1);
+  --norm-border:rgba(0,200,150,0.3);
+  --norm-glow:rgba(0,200,150,0.18);
+  --norm-soft:#6ee7c7;
+  --gold:#f5c542;
+  --gold-dim:rgba(245,197,66,0.1);
+  --blue:#4fc3f7;
+  --blue-dim:rgba(79,195,247,0.1);
+  --orange:#ff9f43;
+  --orange-dim:rgba(255,159,67,0.1);
+  --text:#d8dde8;
+  --text-dim:#6b7585;
+  --text-mid:#9aa3b2;
+  --line:rgba(255,255,255,0.07);
+}
+
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Outfit',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── ANIMATED BACKGROUND ── */
+.bg-canvas{
+  position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;
+}
+.bg-canvas::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 20%,rgba(255,77,109,0.06) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 35% at 85% 75%,rgba(0,200,150,0.06) 0%,transparent 65%),
+    radial-gradient(ellipse 30% 25% at 50% 50%,rgba(79,195,247,0.03) 0%,transparent 60%);
+}
+.bg-canvas::after{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px);
+  background-size:48px 48px;
+}
+
+/* ── LAYOUT ── */
+.wrap{
+  position:relative;z-index:1;
+  max-width:1100px;margin:0 auto;
+  padding:52px 20px 100px;
+}
+
+/* ── ROOT ── */
+.root{text-align:center;margin-bottom:48px;animation:riseIn .8s ease both}
+.root-chip{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2.5px;
+  text-transform:uppercase;color:var(--text-dim);
+  border:1px solid var(--line);border-radius:99px;
+  padding:6px 16px;margin-bottom:22px;
+}
+.root-chip span{width:6px;height:6px;border-radius:50%;
+  background:linear-gradient(135deg,var(--std),var(--norm))}
+.root-h{
+  font-size:clamp(26px,4.5vw,44px);font-weight:800;
+  letter-spacing:-1.5px;line-height:1.1;margin-bottom:14px;
+  background:linear-gradient(120deg,#fff 20%,#8899bb 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.root-sub{font-size:13.5px;color:var(--text-dim);font-weight:300;letter-spacing:.3px}
+
+/* ── STEM LINE ── */
+.stem{display:flex;flex-direction:column;align-items:center;margin-bottom:0}
+.stem-line{width:2px;height:36px;background:linear-gradient(to bottom,rgba(255,255,255,.25),transparent)}
+
+/* ── SPLIT ── */
+.split-bar{
+  width:55%;height:2px;margin:0 auto;
+  background:linear-gradient(to right,var(--std) 0%,var(--std) 48%,var(--norm) 52%,var(--norm) 100%);
+  position:relative;
+}
+.split-bar::before,.split-bar::after{
+  content:'';position:absolute;top:0;width:2px;height:32px;
+}
+.split-bar::before{left:0;background:linear-gradient(to bottom,var(--std),rgba(255,77,109,.15))}
+.split-bar::after{right:0;background:linear-gradient(to bottom,var(--norm),rgba(0,200,150,.15))}
+
+/* ── BRANCHES ── */
+.branches{
+  display:grid;grid-template-columns:1fr 1fr;gap:24px;
+  margin-top:32px;align-items:start;
+}
+
+/* ── BRANCH HEADER ── */
+.branch-head{
+  border-radius:18px;padding:22px 20px 18px;
+  margin-bottom:16px;position:relative;overflow:hidden;
+  transition:transform .3s;cursor:default;
+}
+.branch-head:hover{transform:translateY(-2px)}
+.branch-head .glow{
+  position:absolute;top:-40px;right:-40px;
+  width:140px;height:140px;border-radius:50%;
+  filter:blur(50px);opacity:.5;
+}
+.std-branch .branch-head{
+  background:linear-gradient(140deg,rgba(255,77,109,.16),rgba(255,77,109,.04));
+  border:1px solid var(--std-border);
+  box-shadow:0 0 48px rgba(255,77,109,.1),inset 0 1px 0 rgba(255,255,255,.08);
+}
+.std-branch .branch-head .glow{background:var(--std)}
+.norm-branch .branch-head{
+  background:linear-gradient(140deg,rgba(0,200,150,.16),rgba(0,200,150,.04));
+  border:1px solid var(--norm-border);
+  box-shadow:0 0 48px rgba(0,200,150,.1),inset 0 1px 0 rgba(255,255,255,.08);
+}
+.norm-branch .branch-head .glow{background:var(--norm)}
+
+.bh-icon{font-size:30px;margin-bottom:10px;display:block}
+.bh-name{
+  font-size:20px;font-weight:700;margin-bottom:4px;
+  font-family:'Outfit',sans-serif;letter-spacing:-.3px;
+}
+.std-branch .bh-name{color:var(--std-soft)}
+.norm-branch .bh-name{color:var(--norm-soft)}
+.bh-sub{font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:.5px}
+
+/* ── DEF CARD ── */
+.def-card{
+  border-radius:12px;padding:16px;margin-bottom:14px;
+  background:var(--surface);position:relative;
+  border:1px solid var(--line);
+}
+.def-card::before{
+  content:'';position:absolute;left:0;top:14px;bottom:14px;
+  width:3px;border-radius:0 3px 3px 0;
+}
+.std-branch .def-card::before{background:var(--std)}
+.norm-branch .def-card::before{background:var(--norm)}
+
+.sec-label{
+  font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;margin-bottom:10px;
+  display:flex;align-items:center;gap:7px;
+}
+.std-branch .sec-label{color:var(--std-soft)}
+.norm-branch .sec-label{color:var(--norm-soft)}
+.sec-label::after{content:'';flex:1;height:1px;background:currentColor;opacity:.18}
+
+.def-txt{font-size:12.5px;line-height:1.7;color:var(--text-mid);margin-bottom:13px}
+
+.formula-main{
+  background:var(--gold-dim);border:1px solid rgba(245,197,66,.3);
+  border-radius:9px;padding:11px 14px;text-align:center;position:relative;
+}
+.formula-main .fl{
+  position:absolute;top:-9px;left:12px;
+  background:var(--bg);padding:0 6px;
+  font-family:'Space Mono',monospace;font-size:9px;
+  color:rgba(245,197,66,.7);letter-spacing:1.5px;
+}
+.formula-main code{
+  font-family:'Space Mono',monospace;font-size:13px;
+  font-weight:700;color:var(--gold);letter-spacing:.3px;
+}
+.formula-main .fv{
+  font-size:10px;color:rgba(245,197,66,.55);
+  margin-top:5px;font-family:'Outfit',sans-serif;font-weight:300;
+}
+
+/* ── METHODS LABEL ── */
+.methods-lbl{
+  font-family:'Space Mono',monospace;font-size:9px;letter-spacing:3px;
+  text-transform:uppercase;margin-bottom:10px;padding-left:2px;
+}
+.std-branch .methods-lbl{color:var(--std)}
+.norm-branch .methods-lbl{color:var(--norm)}
+
+/* ── METHOD CARD ── */
+.mcard{
+  border-radius:12px;margin-bottom:8px;
+  background:var(--surface);border:1px solid var(--line);
+  overflow:hidden;transition:transform .25s,box-shadow .25s;
+}
+.mcard:hover{transform:translateY(-2px)}
+.std-branch .mcard:hover{box-shadow:0 8px 30px rgba(255,77,109,.12);border-color:rgba(255,77,109,.22)}
+.norm-branch .mcard:hover{box-shadow:0 8px 30px rgba(0,200,150,.12);border-color:rgba(0,200,150,.22)}
+
+.mcard-head{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px 11px;cursor:pointer;user-select:none;
+}
+.mcard-num{
+  width:24px;height:24px;border-radius:7px;flex-shrink:0;
+  font-family:'Space Mono',monospace;font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+.std-branch .mcard-num{background:rgba(255,77,109,.18);color:var(--std-soft);border:1px solid rgba(255,77,109,.35)}
+.norm-branch .mcard-num{background:rgba(0,200,150,.15);color:var(--norm-soft);border:1px solid rgba(0,200,150,.3)}
+
+.mcard-title{font-size:13px;font-weight:600;flex:1;line-height:1.3}
+.std-branch .mcard-title{color:#ffb3c1}
+.norm-branch .mcard-title{color:#9ee8d2}
+
+.mcard-chevron{
+  font-size:18px;color:var(--text-dim);
+  transition:transform .3s;flex-shrink:0;line-height:1;
+}
+.mcard.open .mcard-chevron{transform:rotate(180deg)}
+
+/* ── BODY ── */
+.mcard-body{display:none;padding:0 14px 14px;animation:slideDown .25s ease}
+.mcard.open .mcard-body{display:block}
+
+/* ── INFO BLOCKS ── */
+.iblock{
+  border-radius:8px;padding:10px 12px;margin-bottom:7px;
+  font-size:11.5px;line-height:1.6;
+}
+.iblock:last-child{margin-bottom:0}
+.iblock-lbl{
+  font-family:'Space Mono',monospace;font-size:9px;letter-spacing:1.5px;
+  text-transform:uppercase;display:block;margin-bottom:5px;opacity:.7;
+}
+
+/* Formula block */
+.iblock.ib-formula{
+  background:var(--gold-dim);border:1px solid rgba(245,197,66,.28);color:var(--gold);
+  font-family:'Space Mono',monospace;font-size:11px;
+}
+.iblock.ib-formula .iblock-lbl{color:rgba(245,197,66,.65)}
+.iblock.ib-formula strong{font-size:12.5px;display:block;margin-bottom:3px}
+.iblock.ib-formula em{font-size:9.5px;opacity:.6;font-style:normal;font-family:'Outfit',sans-serif}
+
+/* Code block */
+.iblock.ib-code{
+  background:#0a0e16;border:1px solid rgba(255,255,255,.08);
+  padding:0;overflow:hidden;
+}
+.code-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.06);
+}
+.code-dots{display:flex;gap:5px}
+.code-dots span{width:9px;height:9px;border-radius:50%}
+.code-dots span:nth-child(1){background:#ff5f57}
+.code-dots span:nth-child(2){background:#febc2e}
+.code-dots span:nth-child(3){background:#28c840}
+.code-lang{
+  font-family:'Space Mono',monospace;font-size:9px;
+  color:var(--text-dim);letter-spacing:1px;
+}
+pre{
+  padding:11px 14px;font-family:'Space Mono',monospace;
+  font-size:10.5px;line-height:1.7;overflow-x:auto;
+  color:#c9d1d9;tab-size:2;
+}
+.kw{color:#ff79c6}.fn{color:#50fa7b}.cm{color:#6272a4;font-style:italic}
+.st{color:#f1fa8c}.nb{color:#bd93f9}.op{color:#ff79c6}
+.num{color:#bd93f9}.co{color:#8be9fd}
+
+/* Usage block */
+.iblock.ib-usage{
+  background:var(--blue-dim);border:1px solid rgba(79,195,247,.25);color:var(--blue);
+}
+.iblock.ib-usage .iblock-lbl{color:rgba(79,195,247,.65)}
+
+/* Tip block */
+.iblock.ib-tip{
+  background:var(--orange-dim);border:1px solid rgba(255,159,67,.28);color:var(--orange);
+}
+.iblock.ib-tip .iblock-lbl{color:rgba(255,159,67,.65)}
+
+/* Result block */
+.iblock.ib-result{
+  background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--text-mid);
+}
+.iblock.ib-result .iblock-lbl{color:var(--text-dim)}
+
+/* ── COMPARISON ── */
+.section{margin-top:60px;animation:riseIn .7s .3s ease both}
+.section-h{
+  text-align:center;font-size:clamp(18px,3vw,26px);font-weight:700;
+  letter-spacing:-.5px;margin-bottom:28px;
+}
+.section-h em{
+  font-style:normal;
+  background:linear-gradient(90deg,var(--std),var(--norm));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+
+.cmp-table{
+  width:100%;border-collapse:separate;border-spacing:0 5px;
+  font-size:12px;
+}
+.cmp-table thead th{
+  font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;padding:10px 16px;color:var(--text-dim);
+}
+.cmp-table thead th:nth-child(2){color:var(--std-soft)}
+.cmp-table thead th:nth-child(3){color:var(--norm-soft)}
+.cmp-table tbody td{
+  padding:11px 16px;
+  background:var(--surface);
+  border-top:1px solid rgba(255,255,255,.04);
+  border-bottom:1px solid rgba(255,255,255,.04);
+  vertical-align:middle;
+}
+.cmp-table tbody td:first-child{
+  border-left:1px solid rgba(255,255,255,.04);
+  border-radius:8px 0 0 8px;
+  color:var(--text-dim);font-weight:600;font-size:11px;letter-spacing:.3px;
+}
+.cmp-table tbody td:nth-child(2){
+  border-left:2px solid rgba(255,77,109,.3);color:#ffb3c1;
+}
+.cmp-table tbody td:last-child{
+  border-right:1px solid rgba(255,255,255,.04);
+  border-radius:0 8px 8px 0;
+  border-left:2px solid rgba(0,200,150,.3);color:#9ee8d2;
+}
+.cmp-table tbody tr:hover td{background:rgba(255,255,255,.055)}
+.mono{font-family:'Space Mono',monospace;font-size:10px}
+
+/* ── DECISION ── */
+.decision{
+  margin-top:60px;
+  display:flex;flex-direction:column;align-items:center;
+  gap:0;animation:riseIn .7s .45s ease both;
+}
+.dnode{
+  border-radius:14px;padding:15px 28px;text-align:center;
+  font-size:13.5px;font-weight:600;max-width:420px;width:100%;
+}
+.dnode.q{
+  background:rgba(120,80,220,.12);border:1px solid rgba(120,80,220,.4);
+  color:#c4b5fd;font-family:'Outfit',sans-serif;
+}
+.darrow{
+  width:2px;height:22px;background:rgba(255,255,255,.14);
+}
+.dsplit{
+  display:grid;grid-template-columns:1fr 1fr;gap:16px;
+  width:100%;position:relative;
+}
+.dsplit::before{
+  content:'';position:absolute;top:0;left:25%;right:25%;
+  height:1px;background:rgba(255,255,255,.1);
+}
+.dbranch{display:flex;flex-direction:column;align-items:center;gap:0}
+.dlabel{
+  font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;padding:3px 12px;border-radius:99px;
+}
+.dlabel.y{background:rgba(0,200,150,.18);color:var(--norm-soft)}
+.dlabel.n{background:rgba(255,77,109,.18);color:var(--std-soft)}
+
+.dresult{border-radius:11px;padding:14px 16px;width:100%;text-align:center}
+.dresult.dr-std{background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.3);color:var(--std-soft)}
+.dresult.dr-norm{background:rgba(0,200,150,.1);border:1px solid rgba(0,200,150,.3);color:var(--norm-soft)}
+.dresult .drn{
+  font-family:'Space Mono',monospace;font-size:13px;font-weight:700;
+  display:block;margin-bottom:5px;
+}
+.dresult .drd{font-size:10.5px;opacity:.7;font-weight:400;font-family:'Outfit',sans-serif}
+
+/* ── QUICK REF ── */
+.qref{margin-top:60px;animation:riseIn .7s .6s ease both}
+.qref-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.qcard{
+  border-radius:12px;padding:16px 14px;
+  background:var(--surface);border:1px solid var(--line);
+  position:relative;overflow:hidden;transition:transform .2s;
+}
+.qcard:hover{transform:translateY(-3px)}
+.qcard::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:2.5px;border-radius:2px 2px 0 0;
+}
+.qcard.q1::after{background:var(--std)}
+.qcard.q2::after{background:var(--norm)}
+.qcard.q3::after{background:var(--gold)}
+.qcard.q4::after{background:var(--blue)}
+.qcard-icon{font-size:22px;margin-bottom:10px;display:block}
+.qcard-title{font-size:12px;font-weight:700;margin-bottom:6px}
+.qcard.q1 .qcard-title{color:var(--std-soft)}
+.qcard.q2 .qcard-title{color:var(--norm-soft)}
+.qcard.q3 .qcard-title{color:var(--gold)}
+.qcard.q4 .qcard-title{color:var(--blue)}
+.qcard-text{font-size:11px;line-height:1.6;color:var(--text-dim)}
+
+/* ── ANIMATIONS ── */
+@keyframes riseIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+.mcard:nth-child(1){animation:riseIn .5s .1s ease both}
+.mcard:nth-child(2){animation:riseIn .5s .2s ease both}
+.mcard:nth-child(3){animation:riseIn .5s .3s ease both}
+.mcard:nth-child(4){animation:riseIn .5s .4s ease both}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:680px){
+  .branches,.qref-grid{grid-template-columns:1fr}
+  .dsplit{grid-template-columns:1fr}
+  .split-bar{width:80%}
+}
+</style>
+</head>
+<body>
+<div class="bg-canvas"></div>
+
+<div class="wrap">
+
+  <!-- ROOT -->
+  <div class="root">
+    <div class="root-chip"><span></span> Machine Learning · Data Preprocessing</div>
+    <h1 class="root-h">Prétraitement des Données<br>Standardisation vs Normalisation</h1>
+    <p class="root-sub">8 méthodes complètes — formules, exemples Python, cas d'usage & nuances</p>
+  </div>
+
+  <!-- STEM -->
+  <div class="stem"><div class="stem-line"></div></div>
+  <div class="split-bar"></div>
+
+  <!-- BRANCHES -->
+  <div class="branches">
+
+    <!-- ══════════ STANDARDISATION ══════════ -->
+    <div class="std-branch">
+      <div class="branch-head">
+        <div class="glow"></div>
+        <span class="bh-icon">⚙️</span>
+        <div class="bh-name">Standardisation</div>
+        <div class="bh-sub">centrer · réduire · z-score</div>
+      </div>
+
+      <div class="def-card">
+        <div class="sec-label">📖 Définition</div>
+        <p class="def-txt">Transforme les données pour que chaque feature ait <strong>μ = 0</strong> et <strong>σ = 1</strong>. Les valeurs expriment combien d'écarts-types elles s'éloignent de la moyenne. Ne borne pas les données.</p>
+        <div class="formula-main">
+          <div class="fl">FORMULE CLEF</div>
+          <code>X' = (X − μ) / σ</code>
+          <div class="fv">μ = moyenne · σ = écart-type</div>
+        </div>
+      </div>
+
+      <div class="methods-lbl">⟁ 4 méthodes</div>
+
+      <!-- S1: Z-Score -->
+      <div class="mcard open">
+        <div class="mcard-head" onclick="toggle(this.parentElement)">
+          <span class="mcard-num">01</span>
+          <span class="mcard-title">Z-Score Standardization</span>
+          <span class="mcard-chevron">⌄</span>
+        </div>
+        <div class="mcard-body">
+          <div class="iblock ib-formula">
+            <span class="iblock-lbl">🔢 Formule</span>
+            <strong>X' = (X − moyenne) / écart-type</strong>
+            <em>moyenne population μ · σ écart-type (ddof=0)</em>
+          </div>
+          <div class="iblock ib-result">
+            <span class="iblock-lbl">📊 Résultat</span>
+            Moyenne ≈ 0 · Écart-type = 1
+          </div>
+          <div class="iblock ib-code">
+            <div class="code-header">
+              <div class="code-dots"><span></span><span></span><span></span></div>
+              <span class="code-lang">python</span>
+            </div>
+<pre><span class="kw">import</span> numpy <span class="kw">as</span> <span class="co">np</span>
+
+X = np.array([<span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>])
+
+mean = np.<span class="fn">mean</span>(X)
+std  = np.<span class="fn">std</span>(X)
+
+X_std = (X - mean) / std
+<span class="fn">print</span>(X_std)  <span class="cm"># [-1.225  0.  1.225]</span></pre>
+          </div>
+          <div class="iblock ib-usage">
+            <span class="iblock-lbl">🎯 Utilisation</span>
+            Cas général · Machine Learning · Méthode par défaut · Régression, PCA, SVM, LDA
+          </div>
+          <div class="iblock ib-tip">
+            <span class="iblock-lbl">⚡ Nuance</span>
+            Sensible aux outliers : un seul point extrême fausse μ et σ. Toujours inspecter la distribution avant.
+          </div>
+        </div>
+      </div>
+
+      <!-- S2: Robust -->
+      <div class="mcard">
+        <div class="mcard-head" onclick="toggle(this.parentElement)">
+          <span class="mcard-num">02</span>
+          <span class="mcard-title">Robust Standardization</span>
+          <span class="mcard-chevron">⌄</span>
+        </div>
+        <div class="mcard-body">
+          <div class="iblock ib-formula">
+            <span class="iblock-lbl">🔢 Formule</span>
+            <strong>X' = (X − médiane) / IQR</strong>
+            <em>IQR = Q3 − Q1 · résistant aux outliers</em>
+          </div>
+          <div class="iblock ib-result">
+            <span class="iblock-lbl">📊 Pourquoi ?</span>
+            La moyenne est sensible aux outliers · La médiane est robuste
+          </div>
+          <div class="iblock ib-code">
+            <div class="code-header">
+              <div class="code-dots"><span></span><span></span><span></span></div>
+              <span class="code-lang">python</span>
+            </div>
+<pre>X = np.array([<span class="num">2000</span>, <span class="num">3000</span>, <span class="num">5000</span>, <span class="num">1000000</span>])
+
+median = np.<span class="fn">median</span>(X)
+Q1  = np.<span class="fn">percentile</span>(X, <span class="num">25</span>)
+Q3  = np.<span class="fn">percentile</span>(X, <span class="num">75</span>)
+IQR = Q3 - Q1
+
+X_rob = (X - median) / IQR
+<span class="fn">print</span>(X_rob)</pre>
+          </div>
+          <div class="iblock ib-usage">
+            <span class="iblock-lbl">🎯 Utilisation</span>
+            Données financières · Capteurs bruités · Données médicales · Tout jeu avec &gt; 5% d'outliers
+          </div>
+          <div class="iblock ib-tip">
+            <span class="iblock-lbl">⚡ Nuance</span>
+            Ne produit pas μ=0 σ=1 au sens strict — utilise médiane et IQR. Les outliers restent mais n'influencent plus le scaling.
+          </div>
+        </div>
+      </div>
+
+      <!-- S3: Mean Normalization -->
+      <div class="mcard">
+        <div class="mcard-head" onclick="toggle(this.parentElement)">
+          <span class="mcard-num">03</span>
+          <span class="mcard-title">Mean Normalization Std.</span>
+          <span class="mcard-chevron">⌄</span>
+        </div>
+        <div class="mcard-body">
+          <div class="iblock ib-formula">
+            <span class="iblock-lbl">🔢 Formule</span>
+            <strong>X' = (X − moyenne) / (max − min)</strong>
+            <em>Centré sur 0 · utilise le range plutôt que σ</em>
+          </div>
+          <div class="iblock ib-result">
+            <span class="iblock-lbl">📊 Résultat</span>
+            Centré autour de 0 · Valeurs entre −1 et 1 (environ)
+          </div>
+          <div class="iblock ib-code">
+            <div class="code-header">
+              <div class="code-dots"><span></span><span></span><span></span></div>
+              <span class="code-lang">python</span>
+            </div>
+<pre>X = np.array([<span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>])
+
+mean    = np.<span class="fn">mean</span>(X)
+min_val = np.<span class="fn">min</span>(X)
+max_val = np.<span class="fn">max</span>(X)
+
+X_mn = (X - mean) / (max_val - min_val)
+<span class="fn">print</span>(X_mn)  <span class="cm"># [-0.333  0.  0.333]</span></pre>
+          </div>
+          <div class="iblock ib-usage">
+            <span class="iblock-lbl">🎯 Utilisation</span>
+            Moins fréquent · Recherche académique · Modèles nécessitant un centrage sans dépendre de σ
+          </div>
+          <div class="iblock ib-tip">
+            <span class="iblock-lbl">⚡ Nuance</span>
+            Hybride entre standardisation et normalisation. Sensible aux outliers comme Min-Max car utilise max−min.
+          </div>
+        </div>
+      </div>
+
+      <!-- S4: Unit Vector -->
+      <div class="mcard">
+        <div class="mcard-head" onclick="toggle(this.parentElement)">
+          <span class="mcard-num">04</span>
+          <span class="mcard-title">Unit Vector Standardization</span>
+          <span class="mcard-chevron">⌄</span>
+        </div>
+        <div class="mcard-body">
+          <div class="iblock ib-formula">
+            <span class="iblock-lbl">🔢 Formule</span>
+            <strong>X' = X / ‖X‖   où   ‖X‖ = √(Σ Xᵢ²)</strong>
+            <em>Norme euclidienne du vecteur · résultat de longueur = 1</em>
+          </div>
+          <div class="iblock ib-result">
+            <span class="iblock-lbl">📊 Résultat</span>
+            Longueur du vecteur = 1 · Direction préservée
+          </div>
+          <div class="iblock ib-code">
+            <div class="code-header">
+              <div class="code-dots"><span></span><span></span><span></span></div>
+              <span class="code-lang">python</span>
+            </div>
+<pre>X = np.array([<span class="num">3</span>, <span class="num">4</span>])
+
+norm  = np.linalg.<span class="fn">norm</span>(X)
+X_unit = X / norm
+
+<span class="fn">print</span>(X_unit)                <span class="cm"># [0.6 0.8]</span>
+<span class="fn">print</span>(np.linalg.<span class="fn">norm</span>(X_unit)) <span class="cm"># 1.0</span></pre>
+          </div>
+          <div class="iblock ib-usage">
+            <span class="iblock-lbl">🎯 Utilisation</span>
+            ML avancé · NLP · Cosine similarity · Réseaux neurones · Comparaison de vecteurs de direction
+          </div>
+          <div class="iblock ib-tip">
+            <span class="iblock-lbl">⚡ Nuance</span>
+            Opère sur chaque ÉCHANTILLON (ligne), pas par feature (colonne). Identique à L2 Normalization — même opération, nommée différemment selon le contexte.
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /std-branch -->
+
+    <!-- ══════════ NORMALISATION ══════════ -->
+    <div class="norm-branch">
+      <div class="branch-head">
+        <div class="glow"></div>
+        <span class="bh-icon">◈</span>
+        <div class="bh-name">Normalisation</div>
+        <div class="bh-sub">bornage · mise à l'échelle · feature scaling</div>
+      </div>
+
+      <div class="def-card">
+        <div class="sec-label">📖 Définition</div>
+        <p class="def-txt">Transforme les données dans un <strong>intervalle fixe</strong> (généralement [0,1] ou [−1,1]). Préserve les rapports proportionnels mais modifie la distribution. Idéal quand les bornes min/max sont connues.</p>
+        <div class="formula-main">
+          <div class="fl">FORMULE CLEF</div>
+          <code>X' = (X − Xmin) / (Xmax − Xmin)</code>
+          <div class="fv">résultat ∈ [0, 1] · toujours borné</div>
+        </div>
+      </div>
+
+      <div class="methods-lbl">⟁ 4 méthodes</div>
+
+      <!-- N1: Min-Max -->
+      <div class="mcard open">
+        <div class="mcard-head" onclick="toggle(this.parentElement)">
+          <span class="mcard-num">01</span>
+          <span class="mcard-title">Min-Max Normalization</span>
+          <span class="mcard-chevron">⌄</span>
+        </div>
+        <div class="mcard-body">
+          <div class="iblock ib-formula">
+            <span class="iblock-lbl">🔢 Formule</span>
+            <strong>X' = (X − Xmin) / (Xmax − Xmin)</strong>
+            <em>Résultat ∈ [0, 1] · préserve les proportions</em>
+          </div>
+          <div class="iblock ib-result">
+            <span class="iblock-lbl">📊 Résultat</span>
+            Toutes les valeurs mises à l'échelle entre 0 et 1
+          </div>
+          <div class="iblock ib-code">
+            <div class="code-header">
+              <div class="code-dots"><span></span><span></span><span></span></div>
+              <span class="code-lang">python</span>
+            </div>
+<pre>X = np.array([<span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>])
+
+X_min = np.<span class="fn">min</span>(X)
+X_max = np.<span class="fn">max</span>(X)
+
+X_norm = (X - X_min) / (X_max - X_min)
+<span class="fn">print</span>(X_norm)  <span class="cm"># [0.  0.5  1.]</span></pre>
+          </div>
+          <div class="iblock ib-usage">
+            <span class="iblock-lbl">🎯 Utilisation</span>
+            Réseaux neurones (sigmoid/tanh) · KNN · K-Means · Traitement d'image (pixels 0–255 → 0–1)
+          </div>
+          <div class="iblock ib-tip">
+            <span class="iblock-lbl">⚡ Nuance</span>
+            Très sensible aux outliers : un seul point extrême comprime toutes les autres valeurs vers 0 ou 1. Filtrer AVANT.
+          </div>
+        </div>
+      </div>
+
+      <!-- N2: Max-Abs -->
+      <div class="mcard">
+        <div class="mcard-head" onclick="toggle(this.parentElement)">
+          <span class="mcard-num">02</span>
+          <span class="mcard-title">Max-Abs Normalization</span>
+          <span class="mcard-chevron">⌄</span>
+        </div>
+        <div class="mcard-body">
+          <div class="iblock ib-formula">
+            <span class="iblock-lbl">🔢 Formule</span>
+            <strong>X' = X / max(|X|)</strong>
+            <em>Résultat ∈ [−1, 1] · idéal données centrées sur 0</em>
+          </div>
+          <div class="iblock ib-result">
+            <span class="iblock-lbl">📊 Résultat</span>
+            Toutes les valeurs entre −1 et 1 · Préserve le signe et le zéro
+          </div>
+          <div class="iblock ib-code">
+            <div class="code-header">
+              <div class="code-dots"><span></span><span></span><span></span></div>
+              <span class="code-lang">python</span>
+            </div>
+<pre>X = np.array([<span class="num">-10</span>, <span class="num">0</span>, <span class="num">20</span>])
+
+max_abs = np.<span class="fn">max</span>(np.<span class="fn">abs</span>(X))
+
+X_ma = X / max_abs
+<span class="fn">print</span>(X_ma)  <span class="cm"># [-0.5  0.  1.]</span></pre>
+          </div>
+          <div class="iblock ib-usage">
+            <span class="iblock-lbl">🎯 Utilisation</span>
+            Données déjà centrées sur 0 · Matrices sparses (NLP, TF-IDF) · Algorithmes ML sensibles aux valeurs absolues
+          </div>
+          <div class="iblock ib-tip">
+            <span class="iblock-lbl">⚡ Nuance</span>
+            Ne centre PAS les données (pas de soustraction de moyenne). Conçu pour matrices sparses — évite de les rendre denses.
+          </div>
+        </div>
+      </div>
+
+      <!-- N3: L2 -->
+      <div class="mcard">
+        <div class="mcard-head" onclick="toggle(this.parentElement)">
+          <span class="mcard-num">03</span>
+          <span class="mcard-title">L2 (Vector) Normalization</span>
+          <span class="mcard-chevron">⌄</span>
+        </div>
+        <div class="mcard-body">
+          <div class="iblock ib-formula">
+            <span class="iblock-lbl">🔢 Formule</span>
+            <strong>X' = X / ‖X‖₂   où   ‖X‖₂ = √(Σ Xᵢ²)</strong>
+            <em>Norme L2 euclidienne · très proche de Unit Vector Std.</em>
+          </div>
+          <div class="iblock ib-result">
+            <span class="iblock-lbl">📊 Résultat</span>
+            Norme du vecteur = 1 · Direction préservée
+          </div>
+          <div class="iblock ib-code">
+            <div class="code-header">
+              <div class="code-dots"><span></span><span></span><span></span></div>
+              <span class="code-lang">python</span>
+            </div>
+<pre>X = np.array([<span class="num">3</span>, <span class="num">4</span>])
+
+norm  = np.linalg.<span class="fn">norm</span>(X)
+X_l2  = X / norm
+
+<span class="fn">print</span>(X_l2)                 <span class="cm"># [0.6 0.8]</span>
+<span class="fn">print</span>(np.linalg.<span class="fn">norm</span>(X_l2)) <span class="cm"># 1.0</span></pre>
+          </div>
+          <div class="iblock ib-usage">
+            <span class="iblock-lbl">🎯 Utilisation</span>
+            NLP (TF-IDF, word embeddings) · Cosine similarity · Recommandation · Clustering de documents
+          </div>
+          <div class="iblock ib-tip">
+            <span class="iblock-lbl">⚡ Nuance</span>
+            Opère sur chaque ÉCHANTILLON (ligne), pas par feature (colonne) — confusion très fréquente ! Identique à Unit Vector Std. mathématiquement.
+          </div>
+        </div>
+      </div>
+
+      <!-- N4: L1 -->
+      <div class="mcard">
+        <div class="mcard-head" onclick="toggle(this.parentElement)">
+          <span class="mcard-num">04</span>
+          <span class="mcard-title">L1 Normalization</span>
+          <span class="mcard-chevron">⌄</span>
+        </div>
+        <div class="mcard-body">
+          <div class="iblock ib-formula">
+            <span class="iblock-lbl">🔢 Formule</span>
+            <strong>X' = X / ‖X‖₁   où   ‖X‖₁ = Σ |Xᵢ|</strong>
+            <em>Norme L1 Manhattan · somme des valeurs absolues = 1</em>
+          </div>
+          <div class="iblock ib-result">
+            <span class="iblock-lbl">📊 Résultat</span>
+            Somme des valeurs absolues = 1 · Interprétable comme probabilité
+          </div>
+          <div class="iblock ib-code">
+            <div class="code-header">
+              <div class="code-dots"><span></span><span></span><span></span></div>
+              <span class="code-lang">python</span>
+            </div>
+<pre>X = np.array([<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>])
+
+norm = np.<span class="fn">sum</span>(np.<span class="fn">abs</span>(X))
+X_l1 = X / norm
+
+<span class="fn">print</span>(X_l1)  <span class="cm"># [0.167 0.333 0.5]</span>
+<span class="fn">print</span>(np.<span class="fn">sum</span>(np.<span class="fn">abs</span>(X_l1)))  <span class="cm"># 1.0</span></pre>
+          </div>
+          <div class="iblock ib-usage">
+            <span class="iblock-lbl">🎯 Utilisation</span>
+            Analyse de distribution · Données de fréquence · Probabilités · Histogrammes · Topic modeling
+          </div>
+          <div class="iblock ib-tip">
+            <span class="iblock-lbl">⚡ Nuance</span>
+            L1 produit des vecteurs plus "parcimonieux" que L2 (favorise les zéros). Choisir L1 pour la sparsité, L2 pour la similarité géométrique.
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /norm-branch -->
+  </div><!-- /branches -->
+
+  <!-- COMPARISON TABLE -->
+  <div class="section">
+    <h2 class="section-h">📊 Tableau <em>Comparatif</em></h2>
+    <table class="cmp-table">
+      <thead>
+        <tr>
+          <th>Critère</th>
+          <th>⚙️ Standardisation</th>
+          <th>◈ Normalisation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Formule principale</td><td class="mono">z = (X−μ)/σ</td><td class="mono">X'=(X−min)/(max−min)</td></tr>
+        <tr><td>Plage de sortie</td><td>Illimitée (≈ −3 à +3)</td><td>Bornée [0,1] ou [−1,1]</td></tr>
+        <tr><td>Moyenne résultante</td><td>μ = 0</td><td>Variable</td></tr>
+        <tr><td>Écart-type résultant</td><td>σ = 1</td><td>Variable</td></tr>
+        <tr><td>Sensibilité outliers</td><td>⚠️ Modérée</td><td>⛔ Très élevée</td></tr>
+        <tr><td>Préserve forme dist.</td><td>✓ Oui</td><td>✗ Non</td></tr>
+        <tr><td>Algorithmes adaptés</td><td>PCA · SVM · LDA · Régression</td><td>KNN · Réseaux neurones · KMeans</td></tr>
+        <tr><td>Données sparses ?</td><td>MaxAbs / pas de centre</td><td>MaxAbs ou L1/L2</td></tr>
+        <tr><td>Robustesse outliers</td><td>RobustScaler (médiane+IQR)</td><td>Aucune méthode native</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- DECISION TREE -->
+  <div class="section decision">
+    <h2 class="section-h">🔀 Arbre de <em>Décision</em></h2>
+    <div class="dnode q">Y a-t-il des outliers significatifs (&gt; 5%) ?</div>
+    <div class="darrow"></div>
+    <div class="dsplit">
+      <div class="dbranch">
+        <div class="dlabel y">OUI ↓</div>
+        <div class="darrow"></div>
+        <div class="dresult dr-std">
+          <span class="drn">RobustScaler</span>
+          <span class="drd">Médiane + IQR<br>Résistant aux aberrations</span>
+        </div>
+      </div>
+      <div class="dbranch">
+        <div class="dlabel n">NON ↓</div>
+        <div class="darrow"></div>
+        <div class="dnode q" style="font-size:12px;padding:13px 18px;margin-bottom:0">Besoin d'un intervalle fixe [0,1] ?</div>
+        <div class="darrow"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%">
+          <div class="dresult dr-norm">
+            <span class="drn">MinMaxScaler</span>
+            <span class="drd">OUI → [0,1]<br>Images · Réseaux neurones</span>
+          </div>
+          <div class="dresult dr-std">
+            <span class="drn">StandardScaler</span>
+            <span class="drd">NON → σ=1<br>PCA · SVM · Régression</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUICK REF -->
+  <div class="qref section">
+    <h2 class="section-h">💡 Règles <em>d'Or</em></h2>
+    <div class="qref-grid">
+      <div class="qcard q1">
+        <span class="qcard-icon">🔴</span>
+        <div class="qcard-title">Pensez "GAUSS"</div>
+        <div class="qcard-text">Distribution normale, PCA, SVM → <strong>Z-Score</strong>. Les résidus centrés-réduits sont la norme.</div>
+      </div>
+      <div class="qcard q2">
+        <span class="qcard-icon">🟢</span>
+        <div class="qcard-title">Pensez "BORNES"</div>
+        <div class="qcard-text">Réseaux neurones, pixels d'images → <strong>MinMax</strong>. L'intervalle [0,1] doit avoir un sens métier.</div>
+      </div>
+      <div class="qcard q3">
+        <span class="qcard-icon">🟡</span>
+        <div class="qcard-title">Pensez "SPARSE"</div>
+        <div class="qcard-text">NLP, TF-IDF, cosine similarity → <strong>L1 / L2 / MaxAbs</strong>. Ne pas centrer les matrices creuses !</div>
+      </div>
+      <div class="qcard q4">
+        <span class="qcard-icon">🔵</span>
+        <div class="qcard-title">Règle Absolue</div>
+        <div class="qcard-text"><strong>.fit()</strong> uniquement sur le train set. Transformer train + test avec les stats du train. Jamais l'inverse.</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+function toggle(card) {
+  card.classList.toggle('open');
+}
+
+// Scroll reveal
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+      observer.unobserve(e.target);
+    }
+  });
+}, {threshold: 0.08});
+
+document.querySelectorAll('.section').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(22px)';
+  el.style.transition = 'opacity .6s ease, transform .6s ease';
+  observer.observe(el);
+});
+</script>
+</body>
+</html>

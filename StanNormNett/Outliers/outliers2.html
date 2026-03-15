@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Outlier Detection & Handling Methods v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0f;--surface:#12121a;--card:#1a1a26;--border:#2a2a3f;
+  --a1:#ff3c78;--a2:#00e5ff;--a3:#aaff00;--a4:#ff9d00;--a5:#bf80ff;
+  --text:#e8e8f5;--muted:#6b6b8a;
+  --fm:'Space Mono',monospace;--fd:'Syne',sans-serif;
+  --trans:all .18s cubic-bezier(.4,0,.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--fm);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.orb{position:fixed;pointer-events:none;z-index:0;border-radius:50%;filter:blur(90px);}
+.orb1{width:600px;height:600px;top:-200px;right:-200px;background:radial-gradient(circle,rgba(255,60,120,.07),transparent 70%);animation:orb1 9s ease-in-out infinite alternate;}
+.orb2{width:400px;height:400px;bottom:-100px;left:-100px;background:radial-gradient(circle,rgba(0,229,255,.05),transparent 70%);animation:orb2 13s ease-in-out infinite alternate;}
+@keyframes orb1{to{transform:translate(-80px,100px) scale(1.2);}}
+@keyframes orb2{to{transform:translate(80px,-60px) scale(1.15);}}
+.ctn{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:36px 24px 60px;}
+@keyframes fu{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:translateX(0);}}
+@keyframes countUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── HEADER ── */
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--a1);border:1px solid rgba(255,60,120,.35);padding:4px 10px;margin-bottom:14px;background:rgba(255,60,120,.04);}
+.tag::before{content:'';width:5px;height:5px;background:var(--a1);border-radius:50%;animation:pulse 2s infinite;}
+h1{font-family:var(--fd);font-size:clamp(30px,5vw,64px);font-weight:800;line-height:.95;letter-spacing:-2px;color:#fff;margin-bottom:6px;}
+h1 span{-webkit-text-stroke:1px var(--a1);-webkit-text-fill-color:transparent;}
+.hrow{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:36px;}
+.hdesc{font-size:11px;color:var(--muted);line-height:1.8;max-width:420px;}
+
+/* ── SUBNAV ── */
+.subnav{display:flex;gap:4px;margin-bottom:28px;flex-wrap:wrap;}
+.snbtn{font-family:var(--fm);font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:5px 12px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:var(--trans);text-decoration:none;}
+.snbtn:hover{border-color:var(--a2);color:var(--a2);}
+.snbtn.active{border-color:var(--a1);color:var(--a1);background:rgba(255,60,120,.06);}
+
+/* ── SECTIONS ── */
+.sec{background:var(--card);border:1px solid var(--border);padding:26px;margin-bottom:20px;position:relative;animation:fu .4s ease both;}
+.sec::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);}
+.sec-lbl{position:absolute;top:-10px;left:20px;background:var(--bg);font-size:10px;letter-spacing:2px;padding:0 8px;text-transform:uppercase;}
+.sec-lbl.c1{color:var(--a1);}.sec-lbl.c2{color:var(--a2);}.sec-lbl.c3{color:var(--a3);}.sec-lbl.c4{color:var(--a4);}.sec-lbl.c5{color:var(--a5);}
+
+/* ── TOGGLE ── */
+.toggle-wrap{display:flex;justify-content:center;margin-bottom:32px;}
+.toggle{display:flex;background:var(--card);border:1px solid var(--border);padding:4px;gap:4px;}
+.tgl-btn{font-family:var(--fm);font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:10px 32px;border:none;background:transparent;color:var(--muted);cursor:pointer;transition:var(--trans);}
+.tgl-btn.active{background:var(--a1);color:#fff;}
+.tgl-btn:hover:not(.active){color:var(--a1);}
+.xpanel{display:none;animation:fu .4s ease both;}
+.xpanel.on{display:block;}
+
+/* ── FORMS ── */
+label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:5px;}
+input[type=text],textarea,select{font-family:var(--fm);font-size:12px;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 12px;outline:none;transition:var(--trans);}
+input[type=text]:focus,textarea:focus,select:focus{border-color:var(--a2);}
+input[type=text]{width:100%;}
+textarea{resize:vertical;min-height:80px;line-height:1.6;width:100%;}
+select{cursor:pointer;min-width:160px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b6b8a'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:2px;margin-bottom:20px;}
+.tab{font-family:var(--fm);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:8px 16px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:var(--trans);}
+.tab.active{background:var(--a2);color:var(--bg);border-color:var(--a2);}
+.tab:hover:not(.active){color:var(--a2);border-color:var(--a2);}
+.tp{display:none;}.tp.active{display:block;}
+
+/* ── BUTTONS ── */
+.btn{font-family:var(--fm);font-size:11px;letter-spacing:1px;padding:8px 16px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;transition:var(--trans);text-transform:uppercase;white-space:nowrap;}
+.btn:hover{border-color:var(--a2);color:var(--a2);}
+.btn.danger{border-color:var(--a1);color:var(--a1);}
+.btn.danger:hover{background:var(--a1);color:#fff;}
+.btn.gg{border-color:var(--a3);color:var(--a3);}
+.btn.gg:hover{background:var(--a3);color:var(--bg);}
+.btn.primary{background:var(--a2);color:var(--bg);border-color:var(--a2);}
+.btn:disabled{opacity:.35;cursor:not-allowed;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+
+/* ── METHOD BUTTONS ── */
+.method-btns{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px;}
+.mbtn{font-family:var(--fm);font-size:11px;letter-spacing:1px;padding:12px 24px;border:2px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;transition:var(--trans);text-transform:uppercase;display:flex;align-items:center;gap:10px;position:relative;overflow:hidden;}
+.mbtn::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;transform:scaleX(0);transition:transform .3s;}
+.mbtn:hover::after,.mbtn.act::after{transform:scaleX(1);}
+.mbtn-rm::after{background:var(--a1);}
+.mbtn-cap::after{background:var(--a4);}
+.mbtn-log::after{background:var(--a2);}
+.mbtn.act.mbtn-rm{border-color:var(--a1);color:var(--a1);background:rgba(255,60,120,.07);}
+.mbtn.act.mbtn-cap{border-color:var(--a4);color:var(--a4);background:rgba(255,157,0,.07);}
+.mbtn.act.mbtn-log{border-color:var(--a2);color:var(--a2);background:rgba(0,229,255,.07);}
+.mbtn:hover:not(.act){border-color:var(--muted);color:var(--text);}
+.mbtn:disabled{opacity:.35;cursor:not-allowed;}
+.mbtn-icon{font-size:16px;}
+
+/* ── RUN BUTTON ── */
+.runbtn{font-family:var(--fd);font-size:13px;font-weight:700;padding:11px 28px;border:none;color:#fff;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:var(--trans);}
+.runbtn.rm-c{background:var(--a1);}
+.runbtn.rm-c:hover{box-shadow:0 0 22px rgba(255,60,120,.5);}
+.runbtn.cap-c{background:var(--a4);color:var(--bg);}
+.runbtn.cap-c:hover{box-shadow:0 0 22px rgba(255,157,0,.5);}
+.runbtn.log-c{background:var(--a2);color:var(--bg);}
+.runbtn.log-c:hover{box-shadow:0 0 22px rgba(0,229,255,.5);}
+.runbtn.gr-c{background:var(--a3);color:var(--bg);}
+.runbtn.gr-c:hover{box-shadow:0 0 22px rgba(170,255,0,.4);}
+
+/* ── CHIPS ── */
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;}
+.chip{background:var(--surface);border:1px solid var(--border);padding:10px 16px;min-width:100px;transition:var(--trans);position:relative;overflow:hidden;}
+.chip::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;}
+.chip.mu::after{background:var(--a2);}
+.chip.med::after{background:var(--a4);}
+.chip.sig::after{background:var(--a5);}
+.chip.out-c::after{background:var(--a1);}
+.chip.n-c::after{background:var(--border);}
+.chip-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.chip-val{font-family:var(--fd);font-size:19px;font-weight:800;animation:countUp .3s ease;}
+.chip-val.mu{color:var(--a2);}
+.chip-val.med{color:var(--a4);}
+.chip-val.sig{color:var(--a5);}
+.chip-val.n{color:var(--text);}
+.chip-val.out{color:var(--a1);}
+.chip-delta{font-size:9px;margin-top:2px;}
+.chip-delta.pos{color:var(--a3);}
+.chip-delta.neg{color:var(--a1);}
+
+/* ── DETECTION CARDS ── */
+.det2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:700px){.det2{grid-template-columns:1fr;}}
+.det-card{background:var(--surface);border:1px solid var(--border);padding:18px;}
+.det-title{font-family:var(--fd);font-size:13px;font-weight:700;color:#fff;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.det-fml{font-size:11px;line-height:1.8;padding:8px 12px;border-left:2px solid;margin-bottom:10px;font-family:var(--fm);}
+.det-fml.iqr{color:var(--a3);background:rgba(170,255,0,.05);border-color:var(--a3);}
+.det-fml.zsc{color:var(--a2);background:rgba(0,229,255,.05);border-color:var(--a2);}
+.det-desc{font-size:10px;color:var(--muted);line-height:1.7;}
+.badge{font-size:9px;letter-spacing:2px;padding:3px 8px;font-weight:700;}
+
+/* ── FORMULA BOX ── */
+.fbox{border:1px solid;padding:16px 18px;margin:14px 0;animation:fu .3s ease;}
+.fbox.rm{background:rgba(255,60,120,.04);border-color:rgba(255,60,120,.2);}
+.fbox.cap{background:rgba(255,157,0,.04);border-color:rgba(255,157,0,.2);}
+.fbox.log{background:rgba(0,229,255,.04);border-color:rgba(0,229,255,.2);}
+.fbox-title{font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+.fbox.rm .fbox-title{color:var(--a1);}
+.fbox.cap .fbox-title{color:var(--a4);}
+.fbox.log .fbox-title{color:var(--a2);}
+.fbox-text{font-size:12px;line-height:1.9;font-family:var(--fm);}
+.fbox.rm .fbox-text{color:var(--a1);}
+.fbox.cap .fbox-text{color:var(--a4);}
+.fbox.log .fbox-text{color:var(--a2);}
+
+/* ── STEPS ── */
+.steps-title{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--a5);margin-bottom:14px;margin-top:6px;}
+.steps{display:flex;flex-direction:column;}
+.step{display:flex;align-items:flex-start;gap:12px;padding:10px 0;position:relative;animation:slideIn .3s ease both;}
+.step:not(:last-child)::after{content:'';position:absolute;left:12px;top:34px;width:1px;height:calc(100% - 10px);background:var(--border);}
+.step-dot{width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;border:1px solid;transition:var(--trans);}
+.sd-wait{border-color:var(--border);color:var(--muted);background:var(--surface);}
+.sd-done{border-color:var(--a3);color:var(--a3);background:rgba(170,255,0,.1);}
+.sd-active{border-color:var(--a4);color:var(--a4);background:rgba(255,157,0,.1);animation:pulse 1.4s ease infinite;}
+.step-body{flex:1;}
+.step-head{font-size:11px;color:var(--text);margin-bottom:3px;font-weight:700;}
+.step-detail{font-size:10px;color:var(--muted);line-height:1.7;}
+.step-code{font-size:10px;padding:5px 10px;border-left:2px solid;margin-top:6px;font-family:var(--fm);}
+.step-code.rm{color:var(--a1);background:rgba(255,60,120,.05);border-left-color:var(--a1);}
+.step-code.cap{color:var(--a4);background:rgba(255,157,0,.05);border-left-color:var(--a4);}
+.step-code.log{color:var(--a2);background:rgba(0,229,255,.05);border-left-color:var(--a2);}
+
+/* ── COMPARISON ── */
+.cmp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;}
+@media(max-width:900px){.cmp-grid{grid-template-columns:repeat(2,1fr);gap:8px;}}
+.cmp-col{background:var(--surface);border:1px solid var(--border);padding:16px;}
+.cmp-col-hdr{font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.cmp-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03);}
+.cmp-row:last-child{border-bottom:none;}
+.cmp-lbl{font-size:10px;color:var(--muted);}
+.cmp-val{font-size:11px;font-weight:700;}
+.delta{font-size:9px;margin-left:4px;}
+.delta.up{color:var(--a3);}
+.delta.dn{color:var(--a1);}
+
+/* ── TABLES ── */
+.twrap{overflow-x:auto;overflow-y:auto;max-height:300px;}
+.twrap.tall{max-height:420px;}
+.twrap::-webkit-scrollbar{width:4px;height:4px;}
+.twrap::-webkit-scrollbar-track{background:var(--surface);}
+.twrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.twrap::-webkit-scrollbar-thumb:hover{background:var(--a2);}
+.dtbl{width:100%;border-collapse:collapse;font-size:11px;}
+.dtbl th{background:var(--bg);color:var(--a2);font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:7px 10px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2;white-space:nowrap;text-align:center;}
+.dtbl td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.03);transition:background .2s,color .2s;text-align:center;white-space:nowrap;}
+.dtbl tr:hover td{background:rgba(255,255,255,.025);}
+.dtbl .idx{color:var(--muted);font-size:9px;}
+.is-out{color:var(--a1)!important;font-weight:700;}
+.row-out-bg td.is-out{background:rgba(255,60,120,.08)!important;}
+.row-removed{opacity:.25;}
+.row-removed td{color:var(--a1)!important;text-decoration:line-through;}
+.cell-capped{color:var(--a4)!important;font-weight:700;background:rgba(255,157,0,.08)!important;}
+.cell-logged{color:var(--a2)!important;font-weight:700;background:rgba(0,229,255,.07)!important;}
+
+/* ── LEGEND ── */
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);}
+.leg-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+
+/* ── SCATTER ── */
+.scatter-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:700px){.scatter-grid{grid-template-columns:1fr;}}
+.chart-wrap{background:var(--surface);border:1px solid var(--border);padding:14px;}
+.chart-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+canvas{width:100%!important;max-height:220px;}
+
+/* ── CSV DROPZONE ── */
+.dz{border:2px dashed var(--border);padding:24px;text-align:center;cursor:pointer;transition:var(--trans);margin-bottom:12px;}
+.dz:hover,.dz.drag{border-color:var(--a2);background:rgba(0,229,255,.04);}
+.dz p{font-size:11px;color:var(--muted);}
+
+/* ── WARN BOX ── */
+.warn-box{background:rgba(255,157,0,.08);border:1px solid rgba(255,157,0,.4);padding:10px 14px;font-size:11px;color:var(--a4);margin-bottom:12px;}
+/* ── INFO BOX ── */
+.info-box{background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.2);padding:10px 14px;font-size:11px;color:var(--a2);margin-bottom:12px;}
+
+.hidden{display:none!important;}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="ctn">
+
+<!-- ══════════ HEADER ══════════ -->
+<div class="hrow">
+  <div>
+    <div class="tag">Pédagogie · Data Science</div>
+    <h1>Outlier Detection<span> &amp; Handling</span></h1>
+    <p class="hdesc">Détectez les valeurs aberrantes, comprenez leur impact, appliquez la bonne méthode de traitement — étape par étape.</p>
+  </div>
+  <div class="subnav">
+    <a class="snbtn" href="#">Standardisation</a>
+    <a class="snbtn" href="#">Normalisation</a>
+    <a class="snbtn active" href="#">Outliers</a>
+  </div>
+</div>
+
+<!-- ══════════ THEORY CARDS ══════════ -->
+<div class="sec">
+  <span class="sec-lbl c2">Méthodes de Détection — Rappel Théorique</span>
+  <div class="det2">
+    <div class="det-card">
+      <div class="det-title">
+        <span style="color:var(--a3);font-size:18px;">IQR</span>
+        Méthode Interquartile Range
+        <span class="badge" style="background:rgba(170,255,0,.1);color:var(--a3);border:1px solid rgba(170,255,0,.3);">Recommandée</span>
+      </div>
+      <div class="det-fml iqr">
+        IQR = Q3 − Q1<br>
+        Borne inf = Q1 − 1.5 × IQR<br>
+        Borne sup = Q3 + 1.5 × IQR<br>
+        <strong>Si X &lt; borne inf ou X &gt; borne sup → OUTLIER</strong>
+      </div>
+      <div class="det-desc">Utilise les quartiles : robuste aux extrêmes existants. Non biaisée par les outliers eux-mêmes. Méthode de Tukey, utilisée par les boxplots et sklearn RobustScaler. Idéal pour distributions asymétriques.</div>
+    </div>
+    <div class="det-card">
+      <div class="det-title">
+        <span style="color:var(--a2);font-size:18px;">Z</span>
+        Méthode Z-Score
+      </div>
+      <div class="det-fml zsc">
+        Z = (X − μ) / σ<br>
+        <strong>Si |Z| &gt; 3 → OUTLIER</strong><br>
+        <span style="opacity:.7;">(couvre 99.7% d'une distribution normale)</span>
+      </div>
+      <div class="det-desc">Mesure l'écart à la moyenne en unités d'écart-type. Simple mais sensible : les outliers eux-mêmes biaisent μ et σ, ce qui peut sous-estimer leur sévérité. À préférer sur des distributions approximativement normales.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TOGGLE ══════════ -->
+<div class="toggle-wrap">
+  <div class="toggle">
+    <button class="tgl-btn active" onclick="switchMain(this,'explore')">Explore Methods</button>
+    <button class="tgl-btn" onclick="switchMain(this,'lab')">Dataset Lab</button>
+  </div>
+</div>
+
+<!-- ══════════ EXPLORE PANEL ══════════ -->
+<div class="xpanel on" id="panel-explore">
+
+  <div class="sec">
+    <span class="sec-lbl c2">Dataset de Démonstration</span>
+    <div class="row" style="margin-bottom:16px;">
+      <div class="field">
+        <label>Colonne à analyser</label>
+        <select id="eCol" onchange="eColChange()">
+          <option value="salaire">salaire</option>
+          <option value="age">age</option>
+          <option value="score">score_test</option>
+          <option value="temp">température</option>
+          <option value="comm">nb_commandes</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Méthode de détection</label>
+        <select id="eDetect" onchange="eColChange()">
+          <option value="iqr">IQR (recommandée)</option>
+          <option value="z">Z-Score (|Z| > 3)</option>
+        </select>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:var(--a1);"></div>Valeur aberrante détectée</div>
+      <div class="leg-item"><div class="leg-dot" style="background:rgba(170,255,0,.5);"></div>Valeur normale</div>
+    </div>
+    <div id="eStatsBefore" class="chips"></div>
+    <div class="twrap tall" style="margin-top:12px;">
+      <table class="dtbl" id="eTable"></table>
+    </div>
+  </div>
+
+  <div class="sec">
+    <span class="sec-lbl c3">Méthode de Traitement</span>
+    <div class="method-btns">
+      <button class="mbtn mbtn-rm" id="mbtn-rm" onclick="eSelectMethod('rm')"><span class="mbtn-icon">🗑</span> Suppression</button>
+      <button class="mbtn mbtn-cap" id="mbtn-cap" onclick="eSelectMethod('cap')"><span class="mbtn-icon">🔒</span> Capping / Winsorisation</button>
+      <button class="mbtn mbtn-log" id="mbtn-log" onclick="eSelectMethod('log')"><span class="mbtn-icon">📐</span> Transformation Log</button>
+    </div>
+    <div class="warn-box hidden" id="eLogWarn">⚠ La colonne sélectionnée contient des valeurs ≤ 0. La transformation log(X) n'est pas applicable directement. Utilisez log(1+|X|) ou choisissez une autre méthode.</div>
+    <div class="info-box hidden" id="eNoOutlierInfo">ℹ Aucun outlier détecté avec la méthode sélectionnée. Changez de colonne ou de méthode de détection.</div>
+    <div id="eFbox" class="hidden"></div>
+    <div id="eStepsWrap" class="hidden">
+      <div class="steps-title">Étape par Étape — Application de la méthode</div>
+      <div class="steps" id="eSteps"></div>
+    </div>
+    <div id="eActionsRow" class="hidden btn-row" style="margin-top:18px;">
+      <button class="runbtn rm-c" id="eRunBtn" onclick="eApply()">Appliquer la transformation</button>
+      <button class="btn danger" onclick="eReset()">Réinitialiser</button>
+    </div>
+  </div>
+
+  <div class="sec hidden" id="eAfterSec">
+    <span class="sec-lbl c4">Après Transformation</span>
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:var(--a1);opacity:.5;"></div>Ligne supprimée (grisée)</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--a4);"></div>Valeur cappée</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--a2);"></div>Log transformé</div>
+    </div>
+    <div id="eStatsAfter" class="chips"></div>
+    <div class="twrap tall" style="margin-top:10px;">
+      <table class="dtbl" id="eTableAfter"></table>
+    </div>
+  </div>
+
+  <div class="sec hidden" id="eCmpSec">
+    <span class="sec-lbl c5">Comparaison des 3 Méthodes</span>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:16px;">Statistiques avant/après pour chaque traitement sur la colonne sélectionnée. Les deltas sont calculés par rapport à la distribution originale.</p>
+    <div class="cmp-grid" id="eCmpGrid"></div>
+  </div>
+
+</div><!-- /explore -->
+
+<!-- ══════════ LAB PANEL ══════════ -->
+<div class="xpanel" id="panel-lab">
+
+  <div class="sec">
+    <span class="sec-lbl c2">Source de Données</span>
+    <div class="tabs">
+      <button class="tab active" onclick="lSwitchTab(this,'preload')">Démo</button>
+      <button class="tab" onclick="lSwitchTab(this,'manual')">Saisie manuelle</button>
+      <button class="tab" onclick="lSwitchTab(this,'csv')">Import CSV</button>
+    </div>
+    <div class="tp active" id="lt-preload">
+      <p style="font-size:11px;color:var(--muted);margin-bottom:12px;">Chargez un dataset de démonstration avec outliers réels :</p>
+      <div class="btn-row">
+        <button class="btn" onclick="lLoadPreset('employees')">👥 Employés &amp; Salaires</button>
+        <button class="btn" onclick="lLoadPreset('sensors')">📡 Capteurs Industriels</button>
+        <button class="btn" onclick="lLoadPreset('medical')">🏥 Données Médicales</button>
+      </div>
+    </div>
+    <div class="tp" id="lt-manual">
+      <div class="field" style="margin-bottom:10px;">
+        <label>En-têtes (virgule-séparés)</label>
+        <input type="text" id="lManualHdr" value="valeur_A, valeur_B, valeur_C">
+      </div>
+      <div class="field">
+        <label>Données (une observation par ligne, virgule-séparées)</label>
+        <textarea id="lManualData" placeholder="10, 20, 5&#10;12, 18, 7&#10;11, 21, 999&#10;9, 19, 6"></textarea>
+      </div>
+      <button class="btn gg" style="margin-top:10px;" onclick="lParseManual()">Charger les données</button>
+    </div>
+    <div class="tp" id="lt-csv">
+      <div class="dz" id="lDz" onclick="document.getElementById('lCsvFile').click()"
+           ondragover="lDzDrag(event,true)" ondragleave="lDzDrag(event,false)" ondrop="lDzDrop(event)">
+        <div style="font-size:26px;margin-bottom:6px;">CSV</div>
+        <p>Cliquez ou glissez-déposez un fichier .csv</p>
+        <p style="font-size:10px;color:var(--a2);margin-top:4px;">Première ligne = noms de colonnes</p>
+      </div>
+      <input type="file" id="lCsvFile" accept=".csv,.txt" style="display:none;" onchange="lCsvLoad(this)">
+    </div>
+  </div>
+
+  <div class="sec hidden" id="lControlsSec">
+    <span class="sec-lbl c3">Analyse &amp; Transformation</span>
+    <div class="warn-box hidden" id="lLogWarn">⚠ La colonne sélectionnée contient des valeurs ≤ 0. La transformation log n'est pas applicable.</div>
+    <div class="row" style="margin-bottom:18px;flex-wrap:wrap;gap:16px;">
+      <div class="field">
+        <label>Colonne cible</label>
+        <select id="lCol" onchange="lColChange()"></select>
+      </div>
+      <div class="field">
+        <label>Détection</label>
+        <select id="lDetect" onchange="lColChange()">
+          <option value="iqr">IQR</option>
+          <option value="z">Z-Score</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Transformation</label>
+        <div style="display:flex;gap:6px;">
+          <button class="btn" style="border-color:var(--a1);color:var(--a1);" onclick="lApply('rm')">🗑 Remove</button>
+          <button class="btn" style="border-color:var(--a4);color:var(--a4);" onclick="lApply('cap')">🔒 Cap</button>
+          <button class="btn" id="lLogBtn" style="border-color:var(--a2);color:var(--a2);" onclick="lApply('log')">📐 Log</button>
+          <button class="btn danger" onclick="lReset()">Reset</button>
+        </div>
+      </div>
+      <button class="runbtn gr-c" style="align-self:flex-end;" onclick="lExport()">↓ Exporter CSV</button>
+    </div>
+    <div id="lStats" class="chips"></div>
+  </div>
+
+  <div class="sec hidden" id="lTableSec">
+    <span class="sec-lbl c1">Dataset <span id="lOutCount" style="font-size:10px;letter-spacing:1px;margin-left:6px;"></span></span>
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:var(--a1);"></div>Outlier détecté</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--a4);"></div>Valeur cappée</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--a2);"></div>Log transformé</div>
+    </div>
+    <div class="twrap tall">
+      <table class="dtbl" id="lTable" style="min-width:100%;"></table>
+    </div>
+  </div>
+
+  <div class="sec hidden" id="lScatterSec">
+    <span class="sec-lbl c4">Dispersion — Avant / Après Transformation</span>
+    <div class="scatter-grid">
+      <div class="chart-wrap">
+        <div class="chart-lbl" style="color:var(--a4);">Avant transformation</div>
+        <canvas id="cBefore"></canvas>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-lbl" style="color:var(--a3);">Après transformation</div>
+        <canvas id="cAfter"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /lab -->
+</div><!-- /ctn -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+/* ══════════════════════════════════════════════════════════════
+   DEMO DATA — columns: id(0) nom(1) age(2) salaire(3) score(4) temp(5) comm(6)
+   Note: salaire row[22] has value -5 which is intentionally an outlier
+   (negative salary), valid test case for Z-score.
+══════════════════════════════════════════════════════════════ */
+var DEMO = {
+  headers: ['id','nom','age','salaire','score_test','temperature','nb_commandes'],
+  rows: [
+    [1,'Alice',28,3200,82,36.6,12],   [2,'Bob',35,3800,78,37.1,19],
+    [3,'Carol',31,3400,85,36.8,15],   [4,'David',45,4200,91,36.5,22],
+    [5,'Eve',52,4900,88,37.0,18],     [6,'Frank',29,3100,76,36.9,11],
+    [7,'Grace',38,3900,84,36.7,20],   [8,'Hank',41,4300,90,37.2,23],
+    [9,'Iris',25,2800,72,36.6,9],     [10,'Jack',33,3500,81,36.8,16],
+    [11,'Kara',47,4600,93,36.5,25],   [12,'Leo',30,98000,77,36.9,14],
+    [13,'Mia',26,2700,74,36.7,8],     [14,'Ned',55,5200,95,37.1,28],
+    [15,'Ora',36,3700,83,37.3,17],    [16,'Pete',22,2100,68,36.6,6],
+    [17,'Quinn',43,4400,89,36.8,21],  [18,'Rosa',48,4700,94,150.0,24],
+    [19,'Sam',27,2500,71,36.5,7],     [20,'Tara',39,3800,87,36.9,18],
+    [21,'Uma',34,3600,80,37.0,13],    [22,'Vic',50,-5,92,37.2,27]
+  ],
+  /* Maps select option value → column index in each row */
+  numCols: {salaire:3, age:2, score:4, temp:5, comm:6}
+};
+
+var PRESETS = {
+  employees: {
+    headers:['id','role','age','salaire','anciennete','bonus'],
+    rows:[
+      [1,'Dev',28,42000,2,3000],[2,'Designer',32,38000,4,2800],
+      [3,'PM',35,55000,6,5000],[4,'Dev',29,44000,3,3200],
+      [5,'Lead',42,72000,9,8000],[6,'Dev',26,39000,1,2500],
+      [7,'Analyst',38,48000,7,4200],[8,'Dev',31,43000,3,3100],
+      [9,'Dir',48,450000,15,60000],[10,'Designer',27,36000,2,2600],
+      [11,'Dev',33,46000,5,3600],[12,'Analyst',36,50000,6,4500],
+      [13,'PM',40,58000,8,5500],[14,'Dev',25,38500,1,2400],
+      [15,'Lead',45,78000,12,9000],[16,'Dev',30,41000,3,2900]
+    ],
+    numCols:['age','salaire','anciennete','bonus']
+  },
+  sensors: {
+    headers:['t','temp_C','pression','vibration','courant'],
+    rows:[
+      [1,22.1,1013,0.4,5.2],[2,22.4,1012,0.5,5.1],[3,22.2,1014,0.4,5.3],
+      [4,22.3,1013,0.6,5.2],[5,22.1,1012,0.4,5.4],[6,145.8,1013,0.5,5.1],
+      [7,22.4,1014,0.4,5.3],[8,22.0,1013,0.7,5.2],[9,22.3,9999,0.4,5.1],
+      [10,22.2,1012,0.5,5.4],[11,22.5,1013,0.4,5.2],[12,22.1,1014,8.7,5.3],
+      [13,22.4,1012,0.5,5.1],[14,22.3,1013,0.4,5.5],[15,22.0,1014,0.6,5.2],
+      [16,22.2,1012,0.4,-3.8],[17,22.4,1013,0.5,5.3],[18,22.1,1014,0.4,5.1]
+    ],
+    numCols:['temp_C','pression','vibration','courant']
+  },
+  medical: {
+    headers:['patient','age','poids','tension','glycemie','rythme'],
+    rows:[
+      [1,45,72,120,5.2,72],[2,52,68,118,5.5,75],[3,38,75,122,5.1,68],
+      [4,61,80,125,5.8,80],[5,49,70,119,5.3,71],[6,55,73,123,5.6,77],
+      [7,43,69,121,5.2,69],[8,58,77,126,890.0,81],[9,47,71,120,5.4,73],
+      [10,51,74,122,5.5,76],[11,64,78,124,5.9,82],[12,42,70,119,5.1,70],
+      [13,56,450,123,5.6,78],[14,48,72,121,5.3,74],[15,53,75,125,5.7,79],
+      [16,39,68,118,5.0,67],[17,60,76,127,5.8,81],[18,46,71,120,5.2,72],
+      [19,54,73,123,5.5,77],[20,41,69,119,5.1,68]
+    ],
+    numCols:['age','poids','tension','glycemie','rythme']
+  }
+};
+
+/* ══════════════════════════════════════════════════════════════
+   MATH UTILS
+══════════════════════════════════════════════════════════════ */
+/**
+ * Linear interpolation quantile — robust version.
+ * Returns the p-th percentile of a SORTED array.
+ * Handles edge cases: empty, single element, p=1.0.
+ */
+function quantile(sorted, p) {
+  var n = sorted.length;
+  if (!n) return NaN;
+  if (n === 1) return sorted[0];
+  /* clamp p to [0,1] to avoid index out of bounds */
+  p = Math.max(0, Math.min(1, p));
+  var pos = (n - 1) * p;
+  var lo  = Math.floor(pos);
+  var hi  = Math.min(lo + 1, n - 1);   /* FIX: clamp hi */
+  var frac = pos - lo;
+  return sorted[lo] + frac * (sorted[hi] - sorted[lo]);
+}
+
+/**
+ * Extract numeric values from rows at column index ci.
+ * Returns array of numbers (NaN rows excluded).
+ */
+function getArr(rows, ci) {
+  var out = [];
+  for (var i = 0; i < rows.length; i++) {
+    var v = rows[i][ci];
+    if (typeof v === 'number' && !isNaN(v)) out.push(v);
+  }
+  return out;
+}
+
+function computeStats(a) {
+  if (!a || !a.length) return {n:0,mean:NaN,std:NaN,median:NaN,q1:NaN,q3:NaN,iqr:NaN,min:NaN,max:NaN};
+  var n = a.length, i, sum = 0;
+  for (i = 0; i < n; i++) sum += a[i];
+  var mean = sum / n, v2 = 0;
+  for (i = 0; i < n; i++) v2 += (a[i]-mean)*(a[i]-mean);
+  var std = Math.sqrt(v2 / n);
+  var s = a.slice().sort(function(a,b){return a-b;});
+  var q1 = quantile(s, 0.25);
+  var q3 = quantile(s, 0.75);
+  return {n:n, mean:mean, std:std, median:quantile(s,0.5), q1:q1, q3:q3, iqr:q3-q1, min:s[0], max:s[n-1]};
+}
+
+/**
+ * Returns indices (into the numeric array `a`) of outliers.
+ * These are positions in `a`, NOT row indices in the full dataset.
+ */
+function outlierIdxs(a, method) {
+  var s = computeStats(a), out = [], i;
+  if (method === 'iqr') {
+    var lo = s.q1 - 1.5*s.iqr, hi = s.q3 + 1.5*s.iqr;
+    for (i = 0; i < a.length; i++) if (a[i] < lo || a[i] > hi) out.push(i);
+  } else {
+    /* z-score: FIX — avoid div by zero when std=0 */
+    if (s.std === 0) return [];
+    for (i = 0; i < a.length; i++) if (Math.abs((a[i]-s.mean)/s.std) > 3) out.push(i);
+  }
+  return out;
+}
+
+function getBounds(s, method) {
+  return method === 'iqr'
+    ? {lo: s.q1 - 1.5*s.iqr, hi: s.q3 + 1.5*s.iqr}
+    : {lo: s.mean - 3*s.std,  hi: s.mean + 3*s.std};
+}
+
+/* FIX: canLog checks for values <= 0, not just < 0 */
+function canLog(a) {
+  for (var i = 0; i < a.length; i++) if (a[i] <= 0) return false;
+  return true;
+}
+
+function fmt(v, d) {
+  if (typeof v !== 'number' || isNaN(v)) return String(v);
+  return v.toFixed(d !== undefined ? d : 2);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CHIPS RENDERER
+   prevA = original array (for delta computation), optional.
+══════════════════════════════════════════════════════════════ */
+function renderChips(containerId, a, outIdxs, prevA) {
+  var s = computeStats(a);
+  var ps = (prevA && prevA.length) ? computeStats(prevA) : null;
+
+  function delta(now, ref) {
+    if (!ps || isNaN(ref) || ref === 0) return '';
+    var d = now - ref, pct = (d / Math.abs(ref)) * 100;
+    var cls = d > 0 ? 'neg' : 'pos'; /* higher mean = neg; lower std = pos */
+    return '<div class="chip-delta '+cls+'">'+(d>0?'+':'')+pct.toFixed(1)+'%</div>';
+  }
+
+  document.getElementById(containerId).innerHTML =
+    '<div class="chip n-c"><div class="chip-lbl">N obs.</div><div class="chip-val n">'+s.n+'</div></div>'+
+    '<div class="chip mu"><div class="chip-lbl">Moyenne</div><div class="chip-val mu">'+fmt(s.mean)+delta(s.mean, ps&&ps.mean)+'</div></div>'+
+    '<div class="chip med"><div class="chip-lbl">Médiane</div><div class="chip-val med">'+fmt(s.median)+'</div></div>'+
+    '<div class="chip sig"><div class="chip-lbl">Écart-type</div><div class="chip-val sig">'+fmt(s.std)+delta(s.std, ps&&ps.std)+'</div></div>'+
+    '<div class="chip n-c"><div class="chip-lbl">Min</div><div class="chip-val n">'+fmt(s.min)+'</div></div>'+
+    '<div class="chip n-c"><div class="chip-lbl">Max</div><div class="chip-val n">'+fmt(s.max)+'</div></div>'+
+    '<div class="chip out-c"><div class="chip-lbl">Outliers</div><div class="chip-val out">'+(outIdxs ? outIdxs.length : 0)+'</div></div>';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   STEPS RENDERER
+══════════════════════════════════════════════════════════════ */
+function renderSteps(containerId, steps) {
+  var html = '';
+  for (var i = 0; i < steps.length; i++) {
+    var s = steps[i];
+    html += '<div class="step" style="animation-delay:'+( i*0.1)+'s">'+
+      '<div class="step-dot '+s.cls+'">'+s.sym+'</div>'+
+      '<div class="step-body">'+
+        '<div class="step-head">'+s.head+'</div>'+
+        '<div class="step-detail" style="white-space:pre-line;">'+s.detail+'</div>'+
+        (s.codeText ? '<div class="step-code '+(s.codeKey||'')+'">'+s.codeText+'</div>' : '')+
+      '</div></div>';
+  }
+  document.getElementById(containerId).innerHTML = html;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   EXPLORE PANEL STATE
+══════════════════════════════════════════════════════════════ */
+var eMethod = null;
+
+function switchMain(el, name) {
+  document.querySelectorAll('.tgl-btn').forEach(function(b){b.classList.remove('active');});
+  el.classList.add('active');
+  document.querySelectorAll('.xpanel').forEach(function(p){p.classList.remove('on');});
+  document.getElementById('panel-'+name).classList.add('on');
+}
+
+/* Returns the raw numeric values for the currently selected explore column. */
+function eGetArr() {
+  var ci = DEMO.numCols[document.getElementById('eCol').value];
+  return getArr(DEMO.rows, ci);
+}
+
+function eColChange() {
+  eMethod = null;
+  ['rm','cap','log'].forEach(function(m){ document.getElementById('mbtn-'+m).classList.remove('act'); });
+  document.getElementById('eFbox').classList.add('hidden');
+  document.getElementById('eStepsWrap').classList.add('hidden');
+  document.getElementById('eActionsRow').classList.add('hidden');
+  document.getElementById('eAfterSec').classList.add('hidden');
+  document.getElementById('eCmpSec').classList.add('hidden');
+  document.getElementById('eLogWarn').classList.add('hidden');
+  document.getElementById('eNoOutlierInfo').classList.add('hidden');
+
+  var a  = eGetArr();
+  var dm = document.getElementById('eDetect').value;
+  var oi = outlierIdxs(a, dm);
+
+  renderChips('eStatsBefore', a, oi);
+  renderExploreTable(oi, null);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   KEY DESIGN: transforms array
+
+   `transforms` is built with one entry per ROW in DEMO.rows.
+   Entry is null   → row has no numeric value in target col, or not modified.
+   Entry is object → {removed, capped, logged, newVal, numericIdx}
+
+   This ensures transforms[rowIndex] always maps correctly.
+───────────────────────────────────────────────────────────── */
+
+/**
+ * Build a transforms array indexed by ROW INDEX (not numeric index).
+ * Returns array of length DEMO.rows.length.
+ * Each entry: null | {removed:bool} | {capped:bool,newVal} | {logged:bool,newVal}
+ */
+function buildTransforms(method, ci, oi, bn) {
+  var transforms = [];
+  var numI = 0; /* counts numeric values seen so far */
+  for (var ri = 0; ri < DEMO.rows.length; ri++) {
+    var v = DEMO.rows[ri][ci];
+    var isNum = typeof v === 'number' && !isNaN(v);
+    if (!isNum) {
+      transforms.push(null);
+      continue;
+    }
+    var isOut = (oi.indexOf(numI) > -1);
+    if (method === 'rm') {
+      transforms.push(isOut ? {removed:true} : null);
+    } else if (method === 'cap') {
+      transforms.push(isOut ? {capped:true, newVal: Math.max(bn.lo, Math.min(v, bn.hi))} : null);
+    } else { /* log — applied to ALL numeric values */
+      transforms.push({logged:true, newVal: Math.log(v)});
+    }
+    numI++;
+  }
+  return transforms;
+}
+
+/**
+ * Build the "after" numeric array from transforms.
+ * Removed rows are excluded; capped/logged use newVal; others use original.
+ */
+function buildAfterArr(ci, transforms) {
+  var out = [];
+  for (var ri = 0; ri < DEMO.rows.length; ri++) {
+    var v = DEMO.rows[ri][ci];
+    var isNum = typeof v === 'number' && !isNaN(v);
+    if (!isNum) continue;
+    var tr = transforms[ri];
+    if (tr && tr.removed) continue;
+    out.push((tr && tr.newVal !== undefined) ? tr.newVal : v);
+  }
+  return out;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   renderExploreTable
+   Renders DEMO.rows. `transforms` is row-indexed (length = DEMO.rows.length).
+   `outIdxs` are numeric-array indices: we track numI to match them.
+───────────────────────────────────────────────────────────── */
+function renderExploreTable(outIdxs, transforms) {
+  var col = document.getElementById('eCol').value;
+  var ci  = DEMO.numCols[col];
+
+  /* Header: skip index 0 (id) as # column already shows row[0] */
+  var h = '<thead><tr><th>#</th>';
+  for (var hi = 1; hi < DEMO.headers.length; hi++) {
+    var hdr = DEMO.headers[hi];
+    h += '<th>' + (hi === ci ? '<span style="color:var(--a3)">'+hdr+'</span>' : hdr) + '</th>';
+  }
+  h += '</tr></thead><tbody>';
+
+  var numI = 0;
+  for (var ri = 0; ri < DEMO.rows.length; ri++) {
+    var row = DEMO.rows[ri];
+    var v   = row[ci];
+    var isNum = typeof v === 'number' && !isNaN(v);
+    var isOut = isNum && outIdxs && (outIdxs.indexOf(numI) > -1);
+    var tr  = transforms ? transforms[ri] : null;  /* FIX: use row index, not numI */
+
+    if (isNum) numI++;
+
+    var trCls = (tr && tr.removed) ? 'row-removed' : (isOut ? 'row-out-bg' : '');
+    h += '<tr class="'+trCls+'"><td class="idx">'+row[0]+'</td>';
+
+    for (var j = 1; j < row.length; j++) {
+      var cv   = row[j];
+      var tdC  = '';
+      var disp = (typeof cv === 'number') ? fmt(cv) : cv;
+
+      if (j === ci && isNum) {
+        if (tr) {
+          if (tr.removed) {
+            disp = '<s>'+fmt(cv)+'</s> <span style="font-size:8px;padding:1px 5px;border:1px solid var(--a1);color:var(--a1);">SUPP</span>';
+          } else if (tr.capped) {
+            tdC  = 'cell-capped';
+            disp = fmt(tr.newVal, 4)+' <span style="font-size:8px;opacity:.65;">← '+fmt(cv)+'</span>';
+          } else if (tr.logged) {
+            tdC  = 'cell-logged';
+            disp = fmt(tr.newVal, 4)+' <span style="font-size:8px;opacity:.65;">← log('+fmt(cv)+')</span>';
+          }
+        } else if (isOut) {
+          tdC = 'is-out';
+        }
+      }
+      h += '<td class="'+tdC+'" title="'+DEMO.headers[j]+': '+cv+'">'+disp+'</td>';
+    }
+    h += '</tr>';
+  }
+  document.getElementById('eTable').innerHTML = h + '</tbody>';
+}
+
+/* renderAfterTable — only shows non-removed rows */
+function renderAfterTable(ci, transforms) {
+  var h = '<thead><tr><th>#</th>';
+  for (var hi = 1; hi < DEMO.headers.length; hi++) {
+    var hdr = DEMO.headers[hi];
+    h += '<th>'+(hi === ci ? '<span style="color:var(--a3)">'+hdr+'</span>' : hdr)+'</th>';
+  }
+  h += '</tr></thead><tbody>';
+
+  var displayIdx = 1;
+  for (var ri = 0; ri < DEMO.rows.length; ri++) {
+    var row = DEMO.rows[ri];
+    var v   = row[ci];
+    var isNum = typeof v === 'number' && !isNaN(v);
+    var tr  = transforms ? transforms[ri] : null;  /* FIX: row-indexed */
+
+    if (tr && tr.removed) continue; /* skip removed rows entirely */
+
+    h += '<tr><td class="idx">'+(displayIdx++)+'</td>';
+    for (var j = 1; j < row.length; j++) {
+      var cv  = row[j];
+      var tdC = '';
+      var disp = (typeof cv === 'number') ? fmt(cv) : cv;
+      if (j === ci && isNum && tr) {
+        if (tr.capped) { tdC = 'cell-capped'; disp = fmt(tr.newVal, 4)+' <span style="font-size:8px;opacity:.6;">cappé</span>'; }
+        else if (tr.logged) { tdC = 'cell-logged'; disp = fmt(tr.newVal, 4)+' <span style="font-size:8px;opacity:.6;">log</span>'; }
+      }
+      h += '<td class="'+tdC+'">'+disp+'</td>';
+    }
+    h += '</tr>';
+  }
+  document.getElementById('eTableAfter').innerHTML = h + '</tbody>';
+}
+
+function eSelectMethod(m) {
+  eMethod = m;
+  ['rm','cap','log'].forEach(function(id){ document.getElementById('mbtn-'+id).classList.remove('act'); });
+  document.getElementById('mbtn-'+m).classList.add('act');
+
+  var col = document.getElementById('eCol').value;
+  var ci  = DEMO.numCols[col];
+  var dm  = document.getElementById('eDetect').value;
+  var a   = eGetArr();
+  var s   = computeStats(a);
+  var oi  = outlierIdxs(a, dm);
+  var bn  = getBounds(s, dm);
+
+  /* FIX: check canLog properly, and handle no-outlier case */
+  var logWarn = document.getElementById('eLogWarn');
+  var noOutInfo = document.getElementById('eNoOutlierInfo');
+  logWarn.classList.add('hidden');
+  noOutInfo.classList.add('hidden');
+
+  if (m === 'log' && !canLog(a)) {
+    logWarn.classList.remove('hidden');
+    document.getElementById('eFbox').classList.add('hidden');
+    document.getElementById('eStepsWrap').classList.add('hidden');
+    document.getElementById('eActionsRow').classList.add('hidden');
+    return;
+  }
+  if (oi.length === 0 && m !== 'log') {
+    noOutInfo.classList.remove('hidden');
+  }
+
+  var outVals = oi.map(function(i){ return fmt(a[i]); });
+
+  /* FIX: compute log stats safely — only if canLog */
+  var logS = null;
+  if (canLog(a)) {
+    var logArr = a.map(function(v){ return Math.log(v); });
+    logS = computeStats(logArr);
+  }
+
+  /* ── Formula box ── */
+  var fb = document.getElementById('eFbox');
+  fb.className = 'fbox ' + m;
+
+  var titles = {
+    rm:  '🗑 Suppression — Règle de décision',
+    cap: '🔒 Capping / Winsorisation — Formule',
+    log: '📐 Transformation Logarithmique — Formule'
+  };
+
+  var textRM = 'Si valeur est outlier ⟹ supprimer la ligne entière\n\n'
+    + (oi.length > 0
+        ? 'Détecté: '+oi.length+' outlier(s) — valeurs ['+outVals.join(', ')+']\nAprès suppression: '+(a.length-oi.length)+' observations conservées'
+        : 'Aucun outlier détecté. La suppression ne modifiera rien.');
+
+  var textCAP = 'X_final = clip(X, borne_inf, borne_sup)\n\n'
+    + 'Borne inf = '+fmt(bn.lo)+'   |   Borne sup = '+fmt(bn.hi)+'\n'
+    + (oi.length > 0
+        ? 'Outliers: ['+outVals.join(', ')+'] → remplacés par la borne la plus proche'
+        : 'Aucun outlier à capper avec cette méthode.');
+
+  var textLOG = logS
+    ? 'X_log = log(X)   [appliqué à TOUTES les valeurs]\n\n'
+      + a.length+' valeurs transformées — pas uniquement les outliers\n'
+      + 'Nouvelle moyenne: '+fmt(logS.mean)+'   Nouvel écart-type: '+fmt(logS.std)+'\n'
+      + (oi.length > 0 ? 'Exemple outlier: log('+fmt(a[oi[0]])+') = '+fmt(logArr[oi[0]],4) : '')
+    : 'Log non applicable (valeurs ≤ 0 présentes).';
+
+  var texts = {rm: textRM, cap: textCAP, log: textLOG};
+  fb.innerHTML = '<div class="fbox-title">'+titles[m]+'</div><div class="fbox-text" style="white-space:pre-line;">'+texts[m]+'</div>';
+  fb.classList.remove('hidden');
+
+  /* ── Steps ── */
+  var stepsData = {
+    rm: [
+      {sym:'1', cls:'sd-done', head:'Détection ('+dm.toUpperCase()+')', detail:'Borne inf: '+fmt(bn.lo)+'   Borne sup: '+fmt(bn.hi)+'\n'+oi.length+' outlier(s) détecté(s).'},
+      {sym:'2', cls:'sd-done', head:'Marquage des lignes', detail: oi.length > 0 ? 'Valeurs hors bornes: ['+outVals.join(', ')+']' : 'Aucune valeur hors bornes.'},
+      {sym:'▶', cls:'sd-active', head:'Suppression', detail:oi.length+' ligne(s) retirée(s) — '+(a.length-oi.length)+' restantes.',
+        codeKey:'rm', codeText:'df = df[~df["'+col+'"].isin(['+outVals.join(',')+'])]'}
+    ],
+    cap: [
+      {sym:'1', cls:'sd-done', head:'Calcul des bornes ('+dm.toUpperCase()+')', detail:'Borne inf = '+fmt(bn.lo)+'   |   Borne sup = '+fmt(bn.hi)},
+      {sym:'2', cls:'sd-done', head:'Identification', detail: oi.length > 0 ? oi.length+' valeur(s): ['+outVals.join(', ')+']' : 'Aucun outlier.'},
+      {sym:'▶', cls:'sd-active', head:'X = clip(X, lo, hi)',
+        detail:'Valeur > hi → '+fmt(bn.hi)+'   Valeur < lo → '+fmt(bn.lo),
+        codeKey:'cap', codeText:'df["'+col+'"] = df["'+col+'"].clip(lower='+fmt(bn.lo)+', upper='+fmt(bn.hi)+')'}
+    ],
+    log: [
+      {sym:'1', cls:'sd-done', head:'Vérification (toutes valeurs > 0)', detail:'Min = '+fmt(s.min)+(s.min>0?' ✓ — OK pour log':'  ✗ — log non applicable')+'   Moyenne = '+fmt(s.mean)+'   Écart-type = '+fmt(s.std)},
+      {sym:'2', cls:'sd-done', head:'Application à TOUTE la colonne', detail:a.length+' valeurs transformées. Compresse l\'échelle, réduit l\'asymétrie droite.'},
+      {sym:'▶', cls:'sd-active', head:'X_log = log(X)',
+        detail: logS ? 'Nouvelle distribution — moyenne: '+fmt(logS.mean)+', écart-type: '+fmt(logS.std)+', max: '+fmt(logS.max) : 'N/A',
+        codeKey:'log', codeText:'df["'+col+'_log"] = np.log(df["'+col+'"])'}
+    ]
+  };
+
+  renderSteps('eSteps', stepsData[m]);
+  document.getElementById('eStepsWrap').classList.remove('hidden');
+
+  var rb = document.getElementById('eRunBtn');
+  rb.className = 'runbtn ' + (m==='rm' ? 'rm-c' : m==='cap' ? 'cap-c' : 'log-c');
+  rb.textContent = 'Appliquer : ' + (m==='rm' ? 'Suppression' : m==='cap' ? 'Capping' : 'Log (colonne entière)');
+  document.getElementById('eActionsRow').classList.remove('hidden');
+}
+
+function eApply() {
+  if (!eMethod) return;
+  var col = document.getElementById('eCol').value;
+  var ci  = DEMO.numCols[col];
+  var dm  = document.getElementById('eDetect').value;
+  var a   = eGetArr();
+  var s   = computeStats(a);
+  var oi  = outlierIdxs(a, dm);
+  var bn  = getBounds(s, dm);
+
+  /* FIX: build transforms indexed by ROW, not by numI */
+  var transforms = buildTransforms(eMethod, ci, oi, bn);
+
+  /* Update the before-table to show transform indicators */
+  renderExploreTable(oi, transforms);
+
+  /* Build after-array */
+  var afterA = buildAfterArr(ci, transforms);
+
+  /* Chips */
+  renderChips('eStatsAfter', afterA, [], a);
+
+  /* After table */
+  renderAfterTable(ci, transforms);
+
+  document.getElementById('eAfterSec').classList.remove('hidden');
+  document.getElementById('eAfterSec').scrollIntoView({behavior:'smooth', block:'start'});
+
+  /* Comparison */
+  renderComparison(a, oi, s, dm, bn);
+  document.getElementById('eCmpSec').classList.remove('hidden');
+}
+
+/* ─────────────────────────────────────────────────────────────
+   renderComparison
+   FIX: logA computed only if canLog(origArr); NaN handled gracefully.
+   FIX: outlierIdxs recomputed independently for each method's result.
+───────────────────────────────────────────────────────────── */
+function renderComparison(origArr, origOi, s0, dm, bn) {
+  /* Build each method's result array */
+  var rmA  = origArr.filter(function(v,i){ return origOi.indexOf(i) === -1; });
+  var capA = origArr.map(function(v,i){
+    return origOi.indexOf(i) === -1 ? v : Math.max(bn.lo, Math.min(v, bn.hi));
+  });
+
+  /* FIX: only compute logA if safe */
+  var logA = null, logStats = null;
+  if (canLog(origArr)) {
+    logA = origArr.map(function(v){ return Math.log(v); });
+    logStats = computeStats(logA);
+  }
+
+  var allStats = [
+    {s: s0,                    label:'Original',      color:'var(--text)',  arr:origArr},
+    {s: computeStats(rmA),     label:'Suppression',   color:'var(--a1)',    arr:rmA},
+    {s: computeStats(capA),    label:'Capping',       color:'var(--a4)',    arr:capA},
+    {s: logStats || {n:0,mean:NaN,std:NaN,median:NaN,min:NaN,max:NaN}, label:'Log Transform', color:'var(--a2)', arr:logA}
+  ];
+
+  var g = document.getElementById('eCmpGrid');
+  g.innerHTML = '';
+
+  for (var mi = 0; mi < allStats.length; mi++) {
+    (function(mi) {
+      var item = allStats[mi];
+      var s    = item.s;
+      var sp   = allStats[0].s; /* baseline */
+
+      function mkDelta(now, ref) {
+        if (mi === 0 || isNaN(now) || isNaN(ref) || ref === 0) return '';
+        var d = now - ref, pct = (d / Math.abs(ref)) * 100;
+        return '<span class="delta '+(d > 0 ? 'dn':'up')+'">'+(d>0?'+':'')+pct.toFixed(1)+'%</span>';
+      }
+
+      /* FIX: outlier count per method — recompute on each result array */
+      var outCount = 0;
+      if (item.arr) outCount = outlierIdxs(item.arr, dm).length;
+
+      var isLogNA = (mi === 3 && !logA);
+
+      g.innerHTML += '<div class="cmp-col">'+
+        '<div class="cmp-col-hdr" style="color:'+item.color+'">'+item.label+(isLogNA?' <span style="font-size:8px;opacity:.5;">(N/A)</span>':'')+'</div>'+
+        '<div class="cmp-row"><span class="cmp-lbl">N obs.</span><span class="cmp-val" style="color:'+item.color+'">'+(isLogNA?'—':s.n)+'</span></div>'+
+        '<div class="cmp-row"><span class="cmp-lbl">Moyenne</span><span class="cmp-val" style="color:'+item.color+'">'+(isLogNA?'—':fmt(s.mean))+mkDelta(s.mean,sp.mean)+'</span></div>'+
+        '<div class="cmp-row"><span class="cmp-lbl">Médiane</span><span class="cmp-val" style="color:'+item.color+'">'+(isLogNA?'—':fmt(s.median))+'</span></div>'+
+        '<div class="cmp-row"><span class="cmp-lbl">Écart-type</span><span class="cmp-val" style="color:'+item.color+'">'+(isLogNA?'—':fmt(s.std))+mkDelta(s.std,sp.std)+'</span></div>'+
+        '<div class="cmp-row"><span class="cmp-lbl">Min</span><span class="cmp-val" style="color:'+item.color+'">'+(isLogNA?'—':fmt(s.min))+'</span></div>'+
+        '<div class="cmp-row"><span class="cmp-lbl">Max</span><span class="cmp-val" style="color:'+item.color+'">'+(isLogNA?'—':fmt(s.max))+'</span></div>'+
+        '<div class="cmp-row"><span class="cmp-lbl">Outliers restants</span>'+
+          '<span class="cmp-val" style="color:'+(isLogNA?'var(--muted)':outCount>0?'var(--a1)':'var(--a3)')+'">'+
+            (isLogNA ? '—' : outCount)+'</span></div>'+
+      '</div>';
+    })(mi);
+  }
+}
+
+function eReset() {
+  eMethod = null;
+  ['rm','cap','log'].forEach(function(m){ document.getElementById('mbtn-'+m).classList.remove('act'); });
+  ['eFbox','eStepsWrap','eActionsRow','eAfterSec','eCmpSec'].forEach(function(id){
+    document.getElementById(id).classList.add('hidden');
+  });
+  document.getElementById('eLogWarn').classList.add('hidden');
+  document.getElementById('eNoOutlierInfo').classList.add('hidden');
+  eColChange();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LAB PANEL
+   labDS.rows is the WORKING copy (modified by transforms).
+   labDS.orig is the PRISTINE copy for reset.
+══════════════════════════════════════════════════════════════ */
+var labDS    = null;
+var chartBef = null;
+var chartAft = null;
+
+function lSwitchTab(el, name) {
+  document.querySelectorAll('#panel-lab .tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('#panel-lab .tp').forEach(function(p){ p.classList.remove('active'); });
+  el.classList.add('active');
+  document.getElementById('lt-'+name).classList.add('active');
+}
+
+function lLoadPreset(name) {
+  var p = PRESETS[name];
+  labDS = {
+    headers: p.headers.slice(),
+    rows:    p.rows.map(function(r){ return r.slice(); }),
+    numCols: p.numCols.slice(),
+    orig:    p.rows.map(function(r){ return r.slice(); })
+  };
+  lInitUI();
+}
+
+function lParseManual() {
+  var hdrs    = document.getElementById('lManualHdr').value.split(',').map(function(h){ return h.trim(); });
+  var rawRows = document.getElementById('lManualData').value.trim().split('\n').filter(Boolean);
+  if (!rawRows.length) { alert('Aucune donnée valide.'); return; }
+
+  var isNum = new Array(hdrs.length).fill(true);
+  rawRows.forEach(function(line){
+    line.split(',').forEach(function(c,i){
+      if (isNaN(parseFloat(c.trim()))) isNum[i] = false;
+    });
+  });
+  var numCols = hdrs.filter(function(h,i){ return isNum[i]; });
+  var rows = rawRows.map(function(line, ri){
+    var cells = line.split(',').map(function(c){ return c.trim(); });
+    return [ri+1].concat(cells.map(function(c, i){
+      return isNum[i] ? parseFloat(c) : c;
+    }));
+  });
+  labDS = {
+    headers: ['id'].concat(hdrs),
+    rows:    rows,
+    numCols: numCols,
+    orig:    rows.map(function(r){ return r.slice(); })
+  };
+  lInitUI();
+}
+
+function lDzDrag(e, on) {
+  e.preventDefault();
+  document.getElementById('lDz').classList[on?'add':'remove']('drag');
+}
+function lDzDrop(e) {
+  e.preventDefault();
+  document.getElementById('lDz').classList.remove('drag');
+  if (e.dataTransfer.files[0]) lReadCSV(e.dataTransfer.files[0]);
+}
+function lCsvLoad(inp) {
+  if (inp.files[0]) lReadCSV(inp.files[0]);
+}
+function lReadCSV(f) {
+  var r = new FileReader();
+  r.onload = function(e){ lParseCSV(e.target.result); };
+  r.readAsText(f, 'UTF-8');
+}
+function lParseCSV(text) {
+  var lines = text.trim().split('\n');
+  if (lines.length < 2) { alert('CSV trop court.'); return; }
+  var sep = text.indexOf('\t') > -1 ? '\t' : text.indexOf(';') > -1 ? ';' : ',';
+  var hdrs = lines[0].split(sep).map(function(h){ return h.trim().replace(/^["']|["']$/g,''); });
+  var isNum = new Array(hdrs.length).fill(true);
+  for (var r = 1; r < lines.length; r++) {
+    lines[r].split(sep).forEach(function(v, i){
+      if (isNaN(parseFloat(v.trim().replace(',','.')))) isNum[i] = false;
+    });
+  }
+  var numCols = hdrs.filter(function(h,i){ return isNum[i]; });
+  var rows = [];
+  for (var r = 1; r < lines.length; r++) {
+    rows.push(lines[r].split(sep).map(function(v, i){
+      var n = parseFloat(v.trim().replace(',','.'));
+      return (isNum[i] && !isNaN(n)) ? n : v.trim().replace(/^["']|["']$/g,'');
+    }));
+  }
+  labDS = {
+    headers: hdrs,
+    rows:    rows,
+    numCols: numCols,
+    orig:    rows.map(function(r){ return r.slice(); })
+  };
+  lInitUI();
+}
+
+function lInitUI() {
+  var sel = document.getElementById('lCol');
+  sel.innerHTML = '';
+  labDS.numCols.forEach(function(c){
+    var o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    sel.appendChild(o);
+  });
+  ['lControlsSec','lTableSec','lScatterSec'].forEach(function(id){
+    document.getElementById(id).classList.remove('hidden');
+  });
+  lColChange();
+}
+
+function lGetColIdx(colName) {
+  return labDS.headers.indexOf(colName);
+}
+
+function lGetArr(colName) {
+  return getArr(labDS.rows, lGetColIdx(colName));
+}
+
+function lColChange() {
+  if (!labDS) return;
+  var col = document.getElementById('lCol').value;
+  var dm  = document.getElementById('lDetect').value;
+  var a   = lGetArr(col);
+  var oi  = outlierIdxs(a, dm);
+  var logOk = canLog(a);
+
+  document.getElementById('lLogWarn').classList[logOk ? 'add':'remove']('hidden');
+  var lb = document.getElementById('lLogBtn');
+  lb.disabled = !logOk;
+  lb.style.opacity = logOk ? '1' : '0.35';
+
+  renderChips('lStats', a, oi);
+  document.getElementById('lOutCount').textContent = '— '+oi.length+' outlier(s) sur '+a.length;
+  renderLabTable(col, oi);
+
+  /* FIX: destroy charts only if they exist */
+  if (chartBef) { chartBef.destroy(); chartBef = null; }
+  chartBef = drawScatter('cBefore', a, oi, '#aaff00', '#ff3c78');
+  lDrawAfter(a, []);
+}
+
+function lApply(m) {
+  if (!labDS) return;
+  var col = document.getElementById('lCol').value;
+  var dm  = document.getElementById('lDetect').value;
+  var ci  = lGetColIdx(col);
+  var a   = lGetArr(col);
+
+  if (m === 'log' && !canLog(a)) {
+    alert('Log non applicable : la colonne contient des valeurs ≤ 0.');
+    return;
+  }
+
+  var s  = computeStats(a);
+  var oi = outlierIdxs(a, dm);
+  var bn = getBounds(s, dm);
+
+  /* FIX: use a numeric counter that matches `a` which is derived from labDS.rows */
+  var numI = 0;
+  var newRows = [];
+
+  for (var ri = 0; ri < labDS.rows.length; ri++) {
+    var v   = labDS.rows[ri][ci];
+    var isN = typeof v === 'number' && !isNaN(v);
+
+    if (!isN) { newRows.push(labDS.rows[ri]); continue; }
+
+    var isOut = (oi.indexOf(numI) > -1);
+    numI++;
+
+    if (m === 'rm' && isOut) {
+      /* skip row — don't add to newRows */
+      continue;
+    }
+
+    var newRow = labDS.rows[ri].slice();
+    if (m === 'cap' && isOut) newRow[ci] = Math.max(bn.lo, Math.min(v, bn.hi));
+    if (m === 'log') newRow[ci] = Math.log(v);
+    newRows.push(newRow);
+  }
+
+  /* FIX: always update labDS.rows correctly */
+  labDS.rows = newRows;
+
+  var newA  = lGetArr(col);
+  var newOi = outlierIdxs(newA, dm);
+
+  renderChips('lStats', newA, newOi, a);
+  document.getElementById('lOutCount').textContent = '— '+newOi.length+' outlier(s) restant(s)';
+  renderLabTable(col, newOi);
+  lDrawAfter(newA, newOi);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   renderLabTable — FIX: headers already include ALL column names.
+   No skip needed — loop j from 0 to row.length-1.
+   The '#' is an EXTRA sequential counter (ri+1), not in data.
+───────────────────────────────────────────────────────────── */
+function renderLabTable(col, outIdxs) {
+  var ci = lGetColIdx(col);
+  var h  = '<thead><tr><th>#</th>';
+  labDS.headers.forEach(function(hdr, hi){
+    h += '<th>'+(hi === ci ? '<span style="color:var(--a3)">'+hdr+'</span>' : hdr)+'</th>';
+  });
+  h += '</tr></thead><tbody>';
+
+  var numI = 0;
+  for (var ri = 0; ri < labDS.rows.length; ri++) {
+    var row = labDS.rows[ri];
+    var v   = row[ci];
+    var isN = typeof v === 'number' && !isNaN(v);
+    var isOut = isN && outIdxs && (outIdxs.indexOf(numI) > -1);
+    if (isN) numI++;
+
+    h += '<tr class="'+(isOut ? 'row-out-bg' : '')+'"><td class="idx">'+(ri+1)+'</td>';
+    for (var j = 0; j < row.length; j++) {
+      var cv  = row[j];
+      var tdC = (j === ci && isOut) ? 'is-out' : '';
+      h += '<td class="'+tdC+'" title="'+labDS.headers[j]+': '+cv+'">'+(typeof cv==='number' ? fmt(cv) : cv)+'</td>';
+    }
+    h += '</tr>';
+  }
+  document.getElementById('lTable').innerHTML = h + '</tbody>';
+}
+
+function lDrawAfter(a, oi) {
+  if (chartAft) { chartAft.destroy(); chartAft = null; }
+  var normalColor = oi.length ? '#aaff00' : '#aaff00';
+  chartAft = drawScatter('cAfter', a, oi, normalColor, oi.length ? '#ff3c78' : '#aaff00');
+}
+
+/* ─────────────────────────────────────────────────────────────
+   drawScatter — FIX: correctly build separate normal/outlier point arrays.
+   outIdxs here are indices into `a` (the numeric array), not row indices.
+───────────────────────────────────────────────────────────── */
+function drawScatter(id, a, outIdxs, nc, oc) {
+  var canvas = document.getElementById(id);
+  if (!canvas) return null;
+  var ctx = canvas.getContext('2d');
+  var nPts = [], oPts = [];
+  for (var i = 0; i < a.length; i++) {
+    var pt = {x: i, y: a[i]};
+    if (outIdxs && outIdxs.indexOf(i) > -1) oPts.push(pt);
+    else nPts.push(pt);
+  }
+  return new Chart(ctx, {
+    type: 'scatter',
+    data: {datasets: [
+      {label:'Normal',  data:nPts, backgroundColor:nc+'99', borderColor:nc, pointRadius:5, pointHoverRadius:7},
+      {label:'Outlier', data:oPts, backgroundColor:(oc||'#ff3c78')+'dd', borderColor:oc||'#ff3c78', pointRadius:9, pointHoverRadius:11, pointStyle:'triangle'}
+    ]},
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#6b6b8a', font:{family:'Space Mono',size:9}, boxWidth:10}}},
+      scales:{
+        x:{ticks:{color:'#6b6b8a',font:{family:'Space Mono',size:9}}, grid:{color:'rgba(255,255,255,.04)'},
+           title:{display:true,text:'Index',color:'#6b6b8a',font:{family:'Space Mono',size:9}}},
+        y:{ticks:{color:'#6b6b8a',font:{family:'Space Mono',size:9}}, grid:{color:'rgba(255,255,255,.04)'},
+           title:{display:true,text:'Valeur',color:'#6b6b8a',font:{family:'Space Mono',size:9}}}
+      }
+    }
+  });
+}
+
+function lReset() {
+  if (!labDS || !labDS.orig) return;
+  /* FIX: deep clone to avoid shared references */
+  labDS.rows = labDS.orig.map(function(r){ return r.slice(); });
+  lColChange();
+}
+
+function lExport() {
+  if (!labDS) { alert('Chargez d\'abord des données.'); return; }
+  var rows = [labDS.headers.join(',')];
+  labDS.rows.forEach(function(r){ rows.push(r.join(',')); });
+  var blob = new Blob([rows.join('\n')], {type:'text/csv'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'outlier_handled_'+document.getElementById('lCol').value+'.csv';
+  a.click();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════════ */
+eColChange();
+lLoadPreset('employees');
+</script>
+</body>
+</html>

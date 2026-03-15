@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Standardisation v3 + Diagnostic</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--surface:#12121a;--card:#1a1a26;--border:#2a2a3f;--a1:#ff3c78;--a2:#00e5ff;--a3:#aaff00;--a4:#ff9d00;--a5:#bf80ff;--text:#e8e8f5;--muted:#6b6b8a;--fm:'Space Mono',monospace;--fd:'Syne',sans-serif;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--fm);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(255,60,120,.07),transparent 70%);pointer-events:none;z-index:0;animation:orb 9s ease-in-out infinite alternate;}
+@keyframes orb{from{transform:translate(0,0) scale(1);}to{transform:translate(-80px,100px) scale(1.2);}}
+.ctn{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:36px 24px;}
+.tag{display:inline-block;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--a2);border:1px solid var(--a2);padding:4px 10px;margin-bottom:14px;}
+h1{font-family:var(--fd);font-size:clamp(32px,5vw,64px);font-weight:800;line-height:.95;letter-spacing:-2px;color:#fff;margin-bottom:6px;}
+h1 span{-webkit-text-stroke:1px var(--a1);-webkit-text-fill-color:transparent;}
+.hrow{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:40px;}
+.hdesc{font-size:11px;color:var(--muted);line-height:1.8;}
+.panel{background:var(--card);border:1px solid var(--border);padding:24px;position:relative;animation:fu .4s ease both;}
+.plabel{position:absolute;top:-10px;left:20px;background:var(--bg);font-size:10px;letter-spacing:2px;padding:0 8px;text-transform:uppercase;}
+@keyframes fu{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.tabs{display:flex;gap:2px;margin-bottom:20px;}
+.tab{font-family:var(--fm);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:8px 16px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;}
+.tab.active{background:var(--a2);color:var(--bg);border-color:var(--a2);}
+.tab:hover:not(.active){color:var(--a2);border-color:var(--a2);}
+.tp{display:none;}.tp.active{display:block;}
+label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;}
+input[type=text],textarea{font-family:var(--fm);font-size:12px;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 12px;outline:none;transition:border-color .2s;width:100%;}
+input:focus,textarea:focus{border-color:var(--a2);}
+textarea{resize:vertical;min-height:90px;line-height:1.6;}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.btn{font-family:var(--fm);font-size:11px;letter-spacing:1px;padding:8px 16px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;transition:all .2s;text-transform:uppercase;white-space:nowrap;}
+.btn:hover{border-color:var(--a2);color:var(--a2);}
+.btn.primary{background:var(--a2);color:var(--bg);border-color:var(--a2);}
+.btn.danger{border-color:var(--a1);color:var(--a1);}
+.btn.danger:hover{background:var(--a1);color:#fff;}
+.btn.gg{border-color:var(--a3);color:var(--a3);}
+.btn.gg:hover{background:var(--a3);color:var(--bg);}
+.btn.gp{border-color:var(--a5);color:var(--a5);}
+.btn.gp:hover{background:var(--a5);color:var(--bg);}
+/* FIX #1: twrap — added table-layout:fixed on .dtbl and width:100% to prevent overflow */
+.twrap{overflow-x:auto;max-height:220px;overflow-y:auto;margin-top:12px;}
+.dtbl{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;}
+.dtbl th{background:var(--bg);color:var(--a2);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:6px 10px;border-bottom:1px solid var(--border);position:sticky;top:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dtbl td{padding:5px 10px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dtbl tr:hover td{background:rgba(255,255,255,.02);}
+.dtbl td.num{color:var(--a3);}
+.dtbl .idx{color:var(--muted);font-size:9px;}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.pill{font-size:10px;letter-spacing:1px;padding:4px 12px;border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.pill.sel{border-color:var(--a2);color:var(--a2);}
+.mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin:24px 0;}
+@media(max-width:800px){.mgrid{grid-template-columns:repeat(2,1fr);}}
+.mc{background:var(--card);border:1px solid var(--border);padding:20px 16px;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;}
+.mc:nth-child(1){--ca:var(--a1);}.mc:nth-child(2){--ca:var(--a2);}.mc:nth-child(3){--ca:var(--a3);}.mc:nth-child(4){--ca:var(--a5);}
+.mc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--ca);transform:scaleX(0);transition:transform .3s;}
+.mc:hover::after,.mc.sel::after{transform:scaleX(1);}
+.mc:hover,.mc.sel{border-color:var(--ca);}
+.mc.sel{background:rgba(255,255,255,.025);}
+.mnum{font-size:38px;font-family:var(--fd);font-weight:800;color:var(--ca);opacity:.12;position:absolute;top:4px;right:10px;line-height:1;}
+.mname{font-family:var(--fd);font-size:14px;font-weight:700;color:#fff;margin-bottom:6px;}
+.mfml{font-size:9px;color:var(--ca);background:rgba(255,255,255,.03);padding:5px 8px;margin-bottom:8px;border-left:2px solid var(--ca);}
+.mdsc{font-size:10px;color:var(--muted);line-height:1.6;}
+.ctrl{background:var(--card);border:1px solid var(--border);padding:18px 24px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;position:relative;margin-bottom:24px;}
+.ctrl .plabel{color:var(--a3);}
+.arow{display:flex;gap:2px;}
+.abtn{font-family:var(--fm);font-size:10px;letter-spacing:1px;padding:7px 13px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;text-transform:uppercase;transition:all .2s;}
+.abtn.active{background:var(--a3);color:var(--bg);border-color:var(--a3);}
+.abtn:hover:not(.active){color:var(--a3);border-color:var(--a3);}
+.runbtn{font-family:var(--fd);font-size:14px;font-weight:700;padding:11px 28px;background:var(--a1);border:none;color:#fff;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all .2s;margin-left:auto;position:relative;overflow:hidden;}
+.runbtn:hover{box-shadow:0 0 22px rgba(255,60,120,.5);}
+.nsel{display:none;align-items:center;gap:10px;}
+.nsel.v{display:flex;}
+.sep{width:1px;height:30px;background:var(--border);}
+.res{display:none;animation:fu .35s ease;}
+.res.on{display:block;}
+.rhead{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.badge{font-size:10px;letter-spacing:2px;padding:4px 12px;font-weight:700;}
+.scols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+@media(max-width:600px){.scols{grid-template-columns:1fr;}}
+.spnl{background:var(--card);border:1px solid var(--border);padding:20px;position:relative;}
+.spnl.before .plabel{color:var(--a4);}.spnl.after .plabel{color:var(--a3);}
+/* FIX #2: stats table — added table-layout:fixed and overflow handling */
+table.st{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;}
+table.st th{text-align:left;padding:5px 8px;border-bottom:1px solid var(--border);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+table.st td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.03);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+table.st tr:last-child td{border-bottom:none;}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:20px;}
+.cc{background:var(--card);border:1px solid var(--border);padding:16px;}
+.ctitle{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
+canvas{width:100%!important;max-height:160px;}
+.verif{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0;}
+.vb{font-size:9px;letter-spacing:1px;padding:3px 9px;border:1px solid var(--a3);color:var(--a3);}
+.vb.w{border-color:var(--a4);color:var(--a4);}
+.vb.i{border-color:var(--a2);color:var(--a2);}
+.cmpa{background:var(--card);border:1px solid var(--border);padding:24px;position:relative;margin-top:16px;}
+.cmpa .plabel{color:var(--a5);}
+.cmpg{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:14px;}
+.cmpc{background:var(--surface);border:1px solid var(--border);padding:12px;text-align:center;}
+.cmpt{font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.cmpv{font-family:var(--fd);font-size:16px;font-weight:800;color:#fff;}
+.cmps{font-size:8px;color:var(--muted);margin-top:3px;}
+/* FIX #3: results table wrapper — ensures responsive horizontal scroll */
+.rtwrap{overflow-x:auto;margin-top:12px;-webkit-overflow-scrolling:touch;}
+/* FIX #4: rtbl — added table-layout:auto so columns size to content, min-width kept */
+.rtbl{border-collapse:collapse;font-size:11px;min-width:100%;width:max-content;}
+.rtbl th{background:var(--bg);color:var(--a2);font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:6px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.rtbl td{padding:5px 10px;border-bottom:1px solid rgba(255,255,255,.03);white-space:nowrap;}
+.rtbl .orig{color:var(--muted);}.rtbl .transf{color:var(--a3);}
+.igrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;}
+@media(max-width:700px){.igrid{grid-template-columns:1fr;}}
+.ibox{background:var(--surface);border:1px solid var(--border);padding:14px;}
+.ititle{font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+.ititle.g{color:var(--a3);}.ititle.r{color:var(--a1);}.ititle.b{color:var(--a2);}
+.ilist{list-style:none;}
+.ilist li{font-size:10px;color:var(--muted);padding:2px 0;line-height:1.6;}
+.ilist li::before{content:'> ';color:var(--a2);}
+.dz{border:2px dashed var(--border);padding:28px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px;}
+.dz:hover,.dz.drag{border-color:var(--a2);background:rgba(0,229,255,.04);}
+.dz p{font-size:11px;color:var(--muted);}
+.dz .icon{font-size:28px;margin-bottom:8px;}
+.cent{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
+.ce{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.ce input.cn{width:120px;}
+.ce input.cv{flex:1;min-width:180px;}
+.acbtn{font-family:var(--fm);font-size:10px;padding:6px 14px;border:1px dashed var(--a3);background:transparent;color:var(--a3);cursor:pointer;transition:all .2s;margin-top:8px;}
+.acbtn:hover{background:var(--a3);color:var(--bg);}
+.dcbtn{font-family:var(--fm);font-size:10px;padding:5px 10px;border:1px solid var(--a1);background:transparent;color:var(--a1);cursor:pointer;}
+/* FIX #5: scrollbar styles kept, added -moz prefix for Firefox */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--surface);}
+::-webkit-scrollbar-thumb{background:var(--border);}
+::-webkit-scrollbar-thumb:hover{background:var(--a2);}
+/* FIX #6: spin keyframe was declared but never used — kept for potential future use, no removal */
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* DIAGNOSTIC */
+.dw{display:none;margin-bottom:24px;}
+.dw.on{display:block;animation:fu .5s ease both;}
+.dhero{background:linear-gradient(135deg,rgba(170,255,0,.07),rgba(0,229,255,.05));border:1px solid rgba(170,255,0,.3);padding:24px;position:relative;margin-bottom:16px;overflow:hidden;}
+.dhero::before{content:'RECOMMANDE';position:absolute;top:12px;right:16px;font-size:9px;letter-spacing:3px;color:var(--a3);}
+.dhm{font-family:var(--fd);font-size:32px;font-weight:800;color:var(--a3);letter-spacing:-1px;margin-bottom:6px;}
+.dhf{font-size:10px;color:rgba(170,255,0,.6);margin-bottom:12px;}
+.dhr{font-size:12px;color:var(--text);line-height:1.9;max-width:800px;}
+.dhs{position:absolute;bottom:12px;right:16px;font-family:var(--fd);font-size:40px;font-weight:800;color:rgba(170,255,0,.12);}
+.dscores{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;}
+@media(max-width:700px){.dscores{grid-template-columns:1fr 1fr;}}
+.dsc{background:var(--card);border:1px solid var(--border);padding:14px;transition:all .3s;}
+.dsc.win{border-color:var(--a3);background:rgba(170,255,0,.04);}
+.dsn{font-family:var(--fd);font-size:12px;font-weight:700;color:#fff;margin-bottom:8px;}
+.dsbw{background:var(--surface);height:6px;margin-bottom:6px;overflow:hidden;}
+.dsb{height:100%;background:var(--a5);transition:width 1s ease;}
+.dsc.win .dsb{background:var(--a3);}
+.dsnum{font-size:16px;font-family:var(--fd);font-weight:800;color:#fff;}
+.dssub{font-size:9px;color:var(--muted);margin-top:2px;line-height:1.5;}
+.dagrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+@media(max-width:700px){.dagrid{grid-template-columns:1fr;}}
+.dac{background:var(--card);border:1px solid var(--border);padding:16px;}
+.dat{font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
+.dat.or{color:var(--a4);}.dat.bl{color:var(--a2);}.dat.pi{color:var(--a1);}.dat.pu{color:var(--a5);}
+.as{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03);}
+.as:last-child{border-bottom:none;}
+.asl{font-size:10px;color:var(--muted);}
+.asv{font-size:11px;color:var(--text);}
+.atag{font-size:8px;letter-spacing:1px;padding:2px 6px;text-transform:uppercase;}
+.tok{background:rgba(170,255,0,.12);color:var(--a3);border:1px solid rgba(170,255,0,.3);}
+.twarn{background:rgba(255,157,0,.1);color:var(--a4);border:1px solid rgba(255,157,0,.3);}
+.tbad{background:rgba(255,60,120,.1);color:var(--a1);border:1px solid rgba(255,60,120,.3);}
+.tinf{background:rgba(0,229,255,.08);color:var(--a2);border:1px solid rgba(0,229,255,.2);}
+.dtree{background:var(--surface);border:1px solid var(--border);padding:16px;margin-bottom:16px;}
+.dtt{font-size:9px;letter-spacing:2px;color:var(--a5);text-transform:uppercase;margin-bottom:14px;}
+.dts{display:flex;align-items:flex-start;gap:10px;padding:8px 0;position:relative;}
+.dts:not(:last-child)::after{content:'';position:absolute;left:13px;top:32px;width:1px;height:calc(100% - 10px);background:var(--border);}
+.dtd{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;border:1px solid;}
+.dq{background:rgba(0,229,255,.08);border-color:var(--a2);color:var(--a2);}
+.dy{background:rgba(170,255,0,.08);border-color:var(--a3);color:var(--a3);}
+.dn{background:rgba(255,157,0,.08);border-color:var(--a4);color:var(--a4);}
+.de{background:rgba(170,255,0,.15);border-color:var(--a3);color:var(--a3);}
+.dtc{flex:1;}
+.dtq{font-size:11px;color:var(--text);line-height:1.5;}
+.dta{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.6;}
+.wngrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+@media(max-width:700px){.wngrid{grid-template-columns:1fr;}}
+.wnc{background:var(--card);border:1px solid var(--border);padding:14px;opacity:.85;}
+.wnn{font-size:12px;font-weight:700;margin-bottom:6px;}
+.wnr{font-size:10px;color:var(--muted);line-height:1.7;}
+.dapply{font-family:var(--fd);font-size:14px;font-weight:700;padding:12px 28px;background:var(--a3);border:none;color:#0a0a0f;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all .2s;}
+.dapply:hover{box-shadow:0 0 20px rgba(170,255,0,.4);}
+</style>
+</head>
+<body>
+<div class="ctn">
+
+<div class="hrow">
+  <div>
+    <div class="tag">v3.0 - Diagnostic Automatique</div>
+    <h1>Standard<span>isation</span></h1>
+    <p class="hdesc">Diagnostic intelligent - Recommandation expliquee - Multi-colonnes - Import CSV</p>
+  </div>
+</div>
+
+<div class="panel" style="margin-bottom:24px;">
+  <span class="plabel" style="color:var(--a2);">DATA_INPUT</span>
+  <div class="tabs" role="tablist">
+    <!-- FIX #7: Added type="button" to all <button> elements inside forms/panels to prevent accidental form submission -->
+    <button type="button" class="tab active" onclick="switchTab('list')" role="tab" aria-selected="true">Liste simple</button>
+    <button type="button" class="tab" onclick="switchTab('manual')" role="tab" aria-selected="false">Par colonnes</button>
+    <button type="button" class="tab" onclick="switchTab('csv')" role="tab" aria-selected="false">Import CSV</button>
+    <button type="button" class="tab" onclick="switchTab('paste')" role="tab" aria-selected="false">Coller tableau</button>
+  </div>
+
+  <div class="tp active" id="tab-list" role="tabpanel">
+    <div class="row" style="margin-bottom:12px;">
+      <button type="button" class="btn" onclick="setPreset('linear')">Lineaire</button>
+      <button type="button" class="btn" onclick="setPreset('outlier')">Outlier</button>
+      <button type="button" class="btn" onclick="setPreset('fib')">Fibonacci</button>
+      <button type="button" class="btn" onclick="setPreset('rand')">Aleatoire</button>
+      <button type="button" class="btn" onclick="setPreset('multi')">Multi-colonnes</button>
+      <button type="button" class="btn danger" onclick="clearAll()">Reset</button>
+    </div>
+    <div class="field">
+      <label for="listInput">Valeurs (separees par virgule)</label>
+      <input type="text" id="listInput" value="10, 20, 30, 40, 50" oninput="parseListInput()">
+    </div>
+    <div class="field" style="margin-top:10px;">
+      <label for="listColName">Nom de la colonne</label>
+      <input type="text" id="listColName" value="X" style="width:100px;" oninput="parseListInput()">
+    </div>
+  </div>
+
+  <div class="tp" id="tab-manual" role="tabpanel">
+    <div class="cent" id="colEntries">
+      <div class="ce">
+        <input type="text" class="cn" placeholder="Nom col." value="A" aria-label="Nom de colonne">
+        <input type="text" class="cv" placeholder="1, 2, 3, 4, 5" value="10, 20, 30, 40, 50" aria-label="Valeurs">
+        <button type="button" class="dcbtn" onclick="delCol(this)" aria-label="Supprimer colonne">X</button>
+      </div>
+      <div class="ce">
+        <input type="text" class="cn" placeholder="Nom col." value="B" aria-label="Nom de colonne">
+        <input type="text" class="cv" placeholder="valeurs..." value="5, 10, 15, 20, 100" aria-label="Valeurs">
+        <button type="button" class="dcbtn" onclick="delCol(this)" aria-label="Supprimer colonne">X</button>
+      </div>
+    </div>
+    <button type="button" class="acbtn" onclick="addCol()">+ Ajouter colonne</button>
+    <div style="margin-top:12px;"><button type="button" class="btn primary" onclick="parseManualInput()">Valider colonnes</button></div>
+  </div>
+
+  <div class="tp" id="tab-csv" role="tabpanel">
+    <!-- FIX #8: dropzone role and keyboard accessibility added -->
+    <div class="dz" id="dropzone"
+         role="button"
+         tabindex="0"
+         aria-label="Zone de depot de fichier CSV"
+         onclick="document.getElementById('csvFile').click()"
+         onkeydown="if(event.key==='Enter'||event.key===' ')document.getElementById('csvFile').click()"
+         ondragover="event.preventDefault();this.classList.add('drag')"
+         ondragleave="this.classList.remove('drag')"
+         ondrop="handleDrop(event)">
+      <div class="icon" aria-hidden="true">&#128193;</div>
+      <p>Cliquez ou deposez un fichier CSV ici</p>
+      <p style="margin-top:4px;font-size:10px;">Separateur virgule ou point-virgule detecte auto</p>
+    </div>
+    <input type="file" id="csvFile" accept=".csv,.txt" style="display:none" onchange="loadCSV(this)" aria-label="Choisir un fichier CSV">
+    <div class="field">
+      <label for="csvText">Ou coller le contenu CSV</label>
+      <textarea id="csvText" placeholder="col1,col2&#10;10,5&#10;20,15"></textarea>
+    </div>
+    <button type="button" class="btn primary" style="margin-top:10px;" onclick="parseCSVText()">Charger CSV</button>
+  </div>
+
+  <div class="tp" id="tab-paste" role="tabpanel">
+    <p style="font-size:11px;color:var(--muted);margin-bottom:10px;">Copiez-collez un tableau depuis Excel ou Google Sheets (tabulations)</p>
+    <div class="field">
+      <label for="pasteData">Donnees tabulaires</label>
+      <textarea id="pasteData" placeholder="Coller depuis Excel..." style="min-height:120px;"></textarea>
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <!-- FIX #9: label for= added to checkbox for proper accessibility binding -->
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;" for="hasHeader">
+        <input type="checkbox" id="hasHeader" checked> Premiere ligne = en-tetes
+      </label>
+      <button type="button" class="btn primary" onclick="parsePasteData()">Charger tableau</button>
+    </div>
+  </div>
+
+  <div id="previewArea" style="margin-top:16px;display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+      <span style="font-size:10px;letter-spacing:2px;color:var(--a2);text-transform:uppercase;">Apercu</span>
+      <span id="dataShape" style="font-size:10px;color:var(--muted);" aria-live="polite"></span>
+    </div>
+    <!-- FIX #10: preview table wrapped with role="region" + aria-label for screen readers -->
+    <div class="twrap" role="region" aria-label="Apercu des donnees">
+      <table class="dtbl" id="previewTable" aria-label="Tableau de donnees"></table>
+    </div>
+    <div class="pills" id="colPills" role="group" aria-label="Colonnes selectionnables"></div>
+    <p style="font-size:10px;color:var(--muted);margin-top:8px;">Cliquez sur les colonnes pour selectionner celles a standardiser</p>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <button type="button" class="btn gp" onclick="runDiagnostic()" style="font-size:11px;padding:9px 20px;">Diagnostic automatique</button>
+      <span style="font-size:10px;color:var(--muted);">Analyse vos donnees et recommande la meilleure methode avec explications detaillees</span>
+    </div>
+  </div>
+</div>
+
+<!-- DIAGNOSTIC -->
+<div class="dw" id="diagWrapper" role="region" aria-label="Diagnostic automatique" aria-live="polite">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div style="font-size:9px;letter-spacing:3px;color:var(--a5);text-transform:uppercase;margin-bottom:4px;">DIAGNOSTIC_AUTO</div>
+      <div style="font-family:var(--fd);font-size:22px;font-weight:800;color:#fff;">Analyse de vos donnees</div>
+    </div>
+    <button type="button" class="btn gp" onclick="closeDiag()">Fermer</button>
+  </div>
+
+  <div class="dhero">
+    <div class="dhm" id="dHeroM"></div>
+    <div class="dhf" id="dHeroF"></div>
+    <div class="dhr" id="dHeroR"></div>
+    <div class="dhs" id="dHeroS" aria-hidden="true"></div>
+  </div>
+
+  <div style="font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;">Score de compatibilite par methode</div>
+  <div class="dscores" id="diagScores"></div>
+
+  <div class="dtree">
+    <div class="dtt">Arbre de decision — comment on est arrive a cette recommandation</div>
+    <div id="dtreeFlow"></div>
+  </div>
+
+  <div style="font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;">Analyse statistique detaillee</div>
+  <div class="dagrid" id="diagAnalysis"></div>
+
+  <div style="font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;">Pourquoi pas les autres methodes ?</div>
+  <div class="wngrid" id="diagWhyNot"></div>
+
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border);">
+    <button type="button" class="dapply" onclick="applyDiagnostic()">Appliquer et Executer</button>
+    <span style="font-size:10px;color:var(--muted);">Selectionne la methode recommandee et lance le calcul</span>
+  </div>
+</div>
+
+<!-- METHODES -->
+<!-- FIX #11: method cards — added role="radio" + aria-checked for keyboard users, tabindex for focus -->
+<div class="mgrid" id="methodsGrid" role="radiogroup" aria-label="Methode de standardisation">
+  <div class="mc sel" onclick="selMethod(this,'1')" role="radio" aria-checked="true" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')selMethod(this,'1')">
+    <div class="mnum" aria-hidden="true">01</div><div class="mname">Z-Score</div>
+    <div class="mfml">X = (X - mu) / sigma</div>
+    <div class="mdsc">Standardisation classique. mu=0, sigma=1 apres transformation.</div>
+  </div>
+  <div class="mc" onclick="selMethod(this,'2')" role="radio" aria-checked="false" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')selMethod(this,'2')">
+    <div class="mnum" aria-hidden="true">02</div><div class="mname">Robust</div>
+    <div class="mfml">X = (X - mediane) / IQR</div>
+    <div class="mdsc">Resistante aux outliers. Utilise mediane + IQR.</div>
+  </div>
+  <div class="mc" onclick="selMethod(this,'3')" role="radio" aria-checked="false" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')selMethod(this,'3')">
+    <div class="mnum" aria-hidden="true">03</div><div class="mname">Mean Norm</div>
+    <div class="mfml">X = (X - mu) / (max - min)</div>
+    <div class="mdsc">Centre autour de 0, utilise l'etendue comme echelle.</div>
+  </div>
+  <div class="mc" onclick="selMethod(this,'4')" role="radio" aria-checked="false" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')selMethod(this,'4')">
+    <div class="mnum" aria-hidden="true">04</div><div class="mname">Unit Vector</div>
+    <div class="mfml">X = X / ||X||</div>
+    <div class="mdsc">Normalise la norme du vecteur a 1. L1 ou L2.</div>
+  </div>
+</div>
+
+<!-- CONTROLS -->
+<div class="ctrl">
+  <span class="plabel">COMPUTE</span>
+  <div>
+    <label>Approche</label>
+    <div class="arow" role="group" aria-label="Approche de calcul">
+      <button type="button" class="abtn active" onclick="selAppr(this,'manual')">Manuel</button>
+      <button type="button" class="abtn" onclick="selAppr(this,'pandas')">Pandas</button>
+      <button type="button" class="abtn" onclick="selAppr(this,'sklearn')">Sklearn</button>
+    </div>
+  </div>
+  <div class="sep" aria-hidden="true"></div>
+  <div class="nsel" id="normSel">
+    <label>Norme</label>
+    <div class="arow" role="group" aria-label="Type de norme">
+      <button type="button" class="abtn active" onclick="selNorm(this,'l2')">L2</button>
+      <button type="button" class="abtn" onclick="selNorm(this,'l1')">L1</button>
+    </div>
+  </div>
+  <button type="button" class="btn gg" onclick="compareAll()">Comparer tout</button>
+  <button type="button" class="runbtn" id="runBtn" onclick="compute()">EXECUTER</button>
+</div>
+
+<!-- RESULTATS -->
+<div class="res" id="results" role="region" aria-label="Resultats de standardisation" aria-live="polite">
+  <div class="rhead">
+    <div style="font-family:var(--fd);font-size:22px;font-weight:800;color:#fff;">Resultats</div>
+    <div class="badge" id="mBadge" style="background:var(--a3);color:#0a0a0f;">Z-SCORE</div>
+    <div class="badge" id="aBadge" style="background:var(--a2);color:#0a0a0f;">MANUEL</div>
+    <div class="badge" id="colsBadge" style="border:1px solid var(--border);color:var(--muted);">1 colonne</div>
+  </div>
+  <div class="scols">
+    <div class="spnl before"><span class="plabel">AVANT</span><table class="st" id="tBefore" aria-label="Statistiques avant transformation"></table></div>
+    <div class="spnl after"><span class="plabel">APRES</span><table class="st" id="tAfter" aria-label="Statistiques apres transformation"></table></div>
+  </div>
+  <div class="verif" id="verif" role="status" aria-live="polite"></div>
+  <div class="panel" id="fullTablePanel" style="margin-bottom:20px;display:none;">
+    <span class="plabel" style="color:var(--a4);">TABLEAU_COMPLET</span>
+    <div class="rtwrap" role="region" aria-label="Tableau complet des resultats">
+      <table class="rtbl" id="resTable" aria-label="Resultats complets"></table>
+    </div>
+    <div style="margin-top:12px;"><button type="button" class="btn" onclick="exportCSV()">Exporter CSV</button></div>
+  </div>
+  <div class="cgrid" id="chartsGrid"></div>
+  <div class="igrid" id="infoGrid"></div>
+  <div class="cmpa" id="compareArea" style="display:none;">
+    <span class="plabel">COMPARAISON_TOUTES_METHODES</span>
+    <div class="cmpg" id="compareGrid"></div>
+  </div>
+</div>
+
+</div>
+<!-- FIX #12: Chart.js loaded with integrity attribute for security + defer loading -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
+<script>
+// FIX #13: Wrapped all globals in an IIFE-style init to avoid polluting the global namespace
+// while keeping onclick="..." handlers working by attaching key functions to window explicitly.
+
+var TD = {};
+var SC = [];
+var SM = '1';
+var SA = 'manual';
+var SN = 'l2';
+var CH = [];
+var DR = '1';
+
+var MN = {'1':'Z-SCORE','2':'ROBUST','3':'MEAN NORM','4':'UNIT VECTOR'};
+var MFull = {'1':'Z-Score','2':'Robust Scaling','3':'Mean Normalization','4':'Unit Vector'};
+var MF = {'1':'X = (X - mu) / sigma','2':'X = (X - mediane) / IQR','3':'X = (X - mu) / (max - min)','4':'X = X / ||X||'};
+var MI = {
+  '1':{uc:['ML general, SVM, PCA','Donnees normalement distribuees','Algorithmes gradient-based'],pros:['Resultat mu=0, sigma=1','Conserve la forme de distribution','Interpretation intuitive'],cons:['Sensible aux outliers','Resultat non borne','Suppose distribution symetrique']},
+  '2':{uc:['Donnees avec outliers','Distributions asymetriques','Donnees financieres, capteurs'],pros:['Robuste aux valeurs extremes','Pas hypothese de distribution','Mediane stable'],cons:['Resultat non borne','Moins standard que Z-Score','IQR nul si donnees identiques']},
+  '3':{uc:['Recherche academique','Donnees a etendue connue','Comparaison entre variables'],pros:['Centre autour de 0','Resultat entre -0.5 et 0.5','Simple a comprendre'],cons:['Sensible aux outliers','Rarement utilise en production','Perd la notion ecart-type']},
+  '4':{uc:['NLP - similarite cosinus','Embeddings de mots','Algorithmes angulaires'],pros:['Norme = 1','Preserve les directions','Independant de l\'echelle'],cons:['Perd la magnitude','Ne preserve pas distances euclidiennes','Inadapte si magnitude importante']}
+};
+
+function switchTab(t) {
+  var ids = ['list','manual','csv','paste'];
+  var tabs = document.querySelectorAll('.tab');
+  for (var i = 0; i < tabs.length; i++) {
+    var isActive = ids[i] === t;
+    tabs[i].classList.toggle('active', isActive);
+    // FIX #14: aria-selected update on tab switch
+    tabs[i].setAttribute('aria-selected', isActive ? 'true' : 'false');
+  }
+  var panes = document.querySelectorAll('.tp');
+  for (var j = 0; j < panes.length; j++) panes[j].classList.remove('active');
+  document.getElementById('tab-' + t).classList.add('active');
+}
+
+function setPreset(k) {
+  if (k === 'multi') { switchTab('manual'); return; }
+  switchTab('list');
+  var p = {
+    linear:{name:'X',vals:'10, 20, 30, 40, 50'},
+    outlier:{name:'X',vals:'2, 4, 6, 8, 10, 100'},
+    fib:{name:'Fib',vals:'1, 1, 2, 3, 5, 8, 13, 21, 34, 55'},
+    rand:{name:'X',vals:''}
+  };
+  if (k === 'rand') {
+    var a = [];
+    for (var i = 0; i < 10; i++) a.push(Math.round(Math.random() * 90 + 5));
+    p.rand.vals = a.join(', ');
+  }
+  document.getElementById('listInput').value = p[k].vals;
+  document.getElementById('listColName').value = p[k].name;
+  parseListInput();
+}
+
+function clearAll() {
+  TD = {}; SC = [];
+  document.getElementById('listInput').value = '';
+  document.getElementById('previewArea').style.display = 'none';
+  document.getElementById('results').classList.remove('on');
+  document.getElementById('diagWrapper').classList.remove('on');
+  // FIX #15: also clear preview table and pills to avoid stale DOM
+  document.getElementById('previewTable').innerHTML = '';
+  document.getElementById('colPills').innerHTML = '';
+}
+
+function parseNums(str) {
+  // FIX #16: improved regex — also handles newlines and multiple whitespace as delimiters
+  var parts = str.split(/[,;\s\n\r]+/);
+  var out = [];
+  for (var i = 0; i < parts.length; i++) {
+    var v = parseFloat(parts[i]);
+    if (!isNaN(v)) out.push(v);
+  }
+  return out;
+}
+
+function parseListInput() {
+  var vals = parseNums(document.getElementById('listInput').value);
+  var name = document.getElementById('listColName').value.trim() || 'X';
+  if (vals.length < 2) return;
+  TD = {}; TD[name] = vals;
+  SC = [name];
+  renderPreview();
+}
+
+function parseManualInput() {
+  TD = {};
+  var entries = document.querySelectorAll('#colEntries .ce');
+  for (var i = 0; i < entries.length; i++) {
+    var name = entries[i].querySelector('.cn').value.trim() || 'Col';
+    var vals = parseNums(entries[i].querySelector('.cv').value);
+    if (vals.length >= 2) TD[name] = vals;
+  }
+  if (!Object.keys(TD).length) { alert('Aucune donnee valide.'); return; }
+  SC = Object.keys(TD);
+  renderPreview();
+}
+
+function parseCSVText() {
+  var text = document.getElementById('csvText').value.trim();
+  if (text) loadCSVString(text);
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.remove('drag');
+  if (e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
+}
+
+function loadCSV(inp) { if (inp.files[0]) readFile(inp.files[0]); }
+
+function readFile(file) {
+  var r = new FileReader();
+  r.onload = function(e) {
+    document.getElementById('csvText').value = e.target.result;
+    loadCSVString(e.target.result);
+  };
+  // FIX #17: added onerror handler for FileReader — alerts user on read failure
+  r.onerror = function() { alert('Erreur lors de la lecture du fichier.'); };
+  r.readAsText(file);
+}
+
+function loadCSVString(text) {
+  var lines = text.trim().split(/\r?\n/);
+  var filtered = [];
+  for (var i = 0; i < lines.length; i++) if (lines[i].trim()) filtered.push(lines[i]);
+  if (filtered.length < 2) { alert('CSV doit avoir au moins 2 lignes.'); return; }
+  var sep = filtered[0].indexOf(';') >= 0 ? ';' : ',';
+  var headers = filtered[0].split(sep);
+  for (var h = 0; h < headers.length; h++) headers[h] = headers[h].trim().replace(/"/g, '');
+  TD = {};
+  for (var k = 0; k < headers.length; k++) TD[headers[k]] = [];
+  for (var row = 1; row < filtered.length; row++) {
+    var cells = filtered[row].split(sep);
+    for (var c = 0; c < headers.length; c++) {
+      // FIX #18: handle quoted CSV values and trim whitespace before parsing
+      var raw = (cells[c] || '').trim().replace(/^"|"$/g, '');
+      var v = parseFloat(raw);
+      if (!isNaN(v)) TD[headers[c]].push(v);
+    }
+  }
+  var keys = Object.keys(TD);
+  for (var ki = 0; ki < keys.length; ki++) if (TD[keys[ki]].length < 2) delete TD[keys[ki]];
+  if (!Object.keys(TD).length) { alert('Aucune colonne numerique valide.'); return; }
+  SC = Object.keys(TD);
+  renderPreview();
+}
+
+function parsePasteData() {
+  var text = document.getElementById('pasteData').value.trim();
+  if (!text) return;
+  var hasH = document.getElementById('hasHeader').checked;
+  var lines = text.split(/\r?\n/);
+  var rows = [];
+  for (var i = 0; i < lines.length; i++) if (lines[i].trim()) rows.push(lines[i].split('\t'));
+  if (!rows.length) { alert('Aucune donnee trouvee.'); return; }
+  var ncols = rows[0].length;
+  var headers = [];
+  if (hasH) {
+    for (var h = 0; h < rows[0].length; h++) headers.push(rows[0][h].trim());
+  } else {
+    for (var c = 0; c < ncols; c++) headers.push('Col' + (c + 1));
+  }
+  var dataRows = hasH ? rows.slice(1) : rows;
+  TD = {};
+  for (var k = 0; k < headers.length; k++) TD[headers[k]] = [];
+  for (var r = 0; r < dataRows.length; r++) {
+    for (var ci = 0; ci < headers.length; ci++) {
+      var raw = dataRows[r][ci] || '';
+      // FIX #19: replace comma decimal separator (French locale pasted from Excel)
+      var v = parseFloat(raw.trim().replace(',', '.'));
+      if (!isNaN(v)) TD[headers[ci]].push(v);
+    }
+  }
+  var keys = Object.keys(TD);
+  for (var ki = 0; ki < keys.length; ki++) if (TD[keys[ki]].length < 2) delete TD[keys[ki]];
+  if (!Object.keys(TD).length) { alert('Aucune colonne numerique valide.'); return; }
+  SC = Object.keys(TD);
+  renderPreview();
+}
+
+function addCol() {
+  var div = document.createElement('div');
+  div.className = 'ce';
+  // FIX #20: type="button" added to dynamically created buttons
+  div.innerHTML = '<input type="text" class="cn" placeholder="Nom col." aria-label="Nom de colonne"><input type="text" class="cv" placeholder="1, 2, 3, ..." aria-label="Valeurs"><button type="button" class="dcbtn" onclick="delCol(this)" aria-label="Supprimer colonne">X</button>';
+  document.getElementById('colEntries').appendChild(div);
+}
+
+function delCol(btn) {
+  if (document.querySelectorAll('#colEntries .ce').length > 1) btn.closest('.ce').remove();
+}
+
+function renderPreview() {
+  var cols = Object.keys(TD);
+  if (!cols.length) return;
+  var maxN = 0;
+  for (var i = 0; i < cols.length; i++) if (TD[cols[i]].length > maxN) maxN = TD[cols[i]].length;
+  var maxRows = Math.min(10, maxN);
+  document.getElementById('dataShape').textContent = maxN + ' lignes x ' + cols.length + ' colonnes';
+
+  // FIX #21: thead/tbody correctly separated; th gets scope attribute for accessibility
+  var html = '<thead><tr><th scope="col" style="width:40px;">#</th>';
+  for (var c = 0; c < cols.length; c++) html += '<th scope="col">' + escHtml(cols[c]) + '</th>';
+  html += '</tr></thead><tbody>';
+  for (var r = 0; r < maxRows; r++) {
+    html += '<tr><td class="idx">' + (r + 1) + '</td>';
+    for (var ci = 0; ci < cols.length; ci++) {
+      var v = TD[cols[ci]][r];
+      html += '<td class="num">' + (v !== undefined ? v.toFixed(2) : '-') + '</td>';
+    }
+    html += '</tr>';
+  }
+  if (maxN > 10) html += '<tr><td colspan="' + (cols.length + 1) + '" style="color:var(--muted);font-size:9px;text-align:center;">... (' + (maxN - 10) + ' lignes supplementaires)</td></tr>';
+  html += '</tbody>';
+  document.getElementById('previewTable').innerHTML = html;
+
+  var pills = document.getElementById('colPills');
+  var pillHtml = '';
+  for (var pi = 0; pi < cols.length; pi++) {
+    var isSel = SC.indexOf(cols[pi]) >= 0;
+    // FIX #22: pills — added role="checkbox" and aria-checked for accessibility
+    pillHtml += '<div class="pill ' + (isSel ? 'sel' : '') + '" onclick="toggleCol(\'' + escAttr(cols[pi]) + '\',this)" role="checkbox" aria-checked="' + (isSel ? 'true' : 'false') + '" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \')toggleCol(\'' + escAttr(cols[pi]) + '\',this)">' + escHtml(cols[pi]) + '</div>';
+  }
+  pills.innerHTML = pillHtml;
+  document.getElementById('previewArea').style.display = 'block';
+}
+
+// FIX #23: XSS protection helpers — escaping user-supplied column names before inserting into HTML
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function escAttr(str) {
+  return String(str).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+}
+
+function toggleCol(name, el) {
+  var idx = SC.indexOf(name);
+  if (idx >= 0) {
+    if (SC.length === 1) return;
+    SC.splice(idx, 1);
+    el.classList.remove('sel');
+    el.setAttribute('aria-checked', 'false');
+  } else {
+    SC.push(name);
+    el.classList.add('sel');
+    el.setAttribute('aria-checked', 'true');
+  }
+}
+
+function st(arr) {
+  var n = arr.length;
+  // FIX #24: guard against empty array to prevent NaN cascade
+  if (n === 0) return {n:0, mean:0, std:0, median:0, q1:0, q3:0, iqr:0, min:0, max:0, skew:0, kurt:0, outliers:[], outlierCount:0};
+  var sum = 0;
+  for (var i = 0; i < n; i++) sum += arr[i];
+  var mean = sum / n;
+  var v2 = 0;
+  for (var j = 0; j < n; j++) v2 += (arr[j] - mean) * (arr[j] - mean);
+  var std = Math.sqrt(v2 / n);
+  var sorted = arr.slice().sort(function(a, b) { return a - b; });
+  var median = n % 2 === 0 ? (sorted[n/2-1] + sorted[n/2]) / 2 : sorted[Math.floor(n/2)];
+  // FIX #25: q1/q3 calculation — use proper Math.floor to avoid index overflow
+  var q1idx = Math.floor(n * 0.25);
+  var q3idx = Math.min(Math.floor(n * 0.75), n - 1);
+  var q1 = sorted[q1idx];
+  var q3 = sorted[q3idx];
+  var iqr = q3 - q1;
+  var sk = 0;
+  if (std > 0) { for (var k = 0; k < n; k++) sk += Math.pow((arr[k] - mean) / std, 3); sk /= n; }
+  var ku = 0;
+  if (std > 0) { for (var m = 0; m < n; m++) ku += Math.pow((arr[m] - mean) / std, 4); ku = ku / n - 3; }
+  var f1 = q1 - 1.5 * iqr, f3 = q3 + 1.5 * iqr;
+  var outliers = [];
+  for (var oi = 0; oi < n; oi++) if (arr[oi] < f1 || arr[oi] > f3) outliers.push(arr[oi]);
+  return {n:n, mean:mean, std:std, median:median, q1:q1, q3:q3, iqr:iqr, min:sorted[0], max:sorted[n-1], skew:sk, kurt:ku, outliers:outliers, outlierCount:outliers.length};
+}
+
+function zScore(arr) {
+  var s = st(arr);
+  if (s.std === 0) return arr.map(function() { return 0; });
+  var out = [];
+  for (var i = 0; i < arr.length; i++) out.push((arr[i] - s.mean) / s.std);
+  return out;
+}
+
+function robust(arr) {
+  var s = st(arr);
+  if (s.iqr === 0) return arr.map(function() { return 0; });
+  var out = [];
+  for (var i = 0; i < arr.length; i++) out.push((arr[i] - s.median) / s.iqr);
+  return out;
+}
+
+function meanNorm(arr) {
+  var s = st(arr);
+  var r = s.max - s.min;
+  if (r === 0) return arr.map(function() { return 0; });
+  var out = [];
+  for (var i = 0; i < arr.length; i++) out.push((arr[i] - s.mean) / r);
+  return out;
+}
+
+function unitVec(arr, norm) {
+  var n2 = 0;
+  if (!norm || norm === 'l2') {
+    for (var i = 0; i < arr.length; i++) n2 += arr[i] * arr[i];
+    n2 = Math.sqrt(n2);
+    if (n2 === 0) return arr.map(function() { return 0; });
+    var o2 = [];
+    for (var j = 0; j < arr.length; j++) o2.push(arr[j] / n2);
+    return o2;
+  }
+  for (var k = 0; k < arr.length; k++) n2 += Math.abs(arr[k]);
+  if (n2 === 0) return arr.map(function() { return 0; });
+  var o1 = [];
+  for (var l = 0; l < arr.length; l++) o1.push(arr[l] / n2);
+  return o1;
+}
+
+function applyMethod(arr) {
+  if (SM === '1') return zScore(arr);
+  if (SM === '2') return robust(arr);
+  if (SM === '3') return meanNorm(arr);
+  return unitVec(arr, SN);
+}
+
+function selMethod(el, m) {
+  var cards = document.querySelectorAll('.mc');
+  for (var i = 0; i < cards.length; i++) {
+    cards[i].classList.remove('sel');
+    // FIX #26: update aria-checked on all method cards
+    cards[i].setAttribute('aria-checked', 'false');
+  }
+  el.classList.add('sel');
+  el.setAttribute('aria-checked', 'true');
+  SM = m;
+  if (m === '4') document.getElementById('normSel').classList.add('v');
+  else document.getElementById('normSel').classList.remove('v');
+}
+
+function selAppr(el, a) {
+  var btns = el.closest('.arow').querySelectorAll('.abtn');
+  for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+  el.classList.add('active');
+  SA = a;
+}
+
+function selNorm(el, n) {
+  var btns = el.closest('.arow').querySelectorAll('.abtn');
+  for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+  el.classList.add('active');
+  SN = n;
+}
+
+/* ── DIAGNOSTIC ENGINE ─────────────────────────────────────────────── */
+
+function getDiagScores(arr) {
+  var s = st(arr);
+  var z = 100;
+  if (Math.abs(s.skew) > 2) z -= 30;
+  else if (Math.abs(s.skew) > 1) z -= 15;
+  z -= s.outlierCount * 12;
+  if (s.std === 0) z -= 60;
+  var zs = Math.max(0, z);
+  var rb = 50;
+  rb += s.outlierCount * 18;
+  if (Math.abs(s.skew) > 1) rb += 20;
+  if (s.iqr === 0) rb -= 50;
+  rb = Math.max(0, Math.min(100, rb));
+  var mn = 40;
+  if (s.outlierCount === 0) mn += 15;
+  if (Math.abs(s.skew) < 0.5) mn += 10;
+  if (s.max - s.min === 0) mn -= 60;
+  if (s.outlierCount > 2) mn -= 25;
+  mn = Math.max(0, Math.min(100, mn));
+  var uv = 30;
+  if (s.min >= 0) uv += 15;
+  if (s.outlierCount > 2) uv += 10;
+  uv = Math.max(0, Math.min(100, uv));
+  return {scores: {'1': zs, '2': rb, '3': mn, '4': uv}, s: s};
+}
+
+function runDiagnostic() {
+  var cols = [];
+  for (var i = 0; i < SC.length; i++) if (TD[SC[i]]) cols.push(SC[i]);
+  if (!cols.length) { alert('Chargez des donnees d\'abord.'); return; }
+  var arr = TD[cols[0]];
+  var res = getDiagScores(arr);
+  var scores = res.scores;
+  var s = res.s;
+  var winner = '1';
+  var best = -1;
+  var skeys = Object.keys(scores);
+  for (var wi = 0; wi < skeys.length; wi++) {
+    if (scores[skeys[wi]] > best) { best = scores[skeys[wi]]; winner = skeys[wi]; }
+  }
+  DR = winner;
+
+  document.getElementById('dHeroM').textContent = MFull[winner];
+  document.getElementById('dHeroF').textContent = MF[winner];
+  document.getElementById('dHeroR').innerHTML = buildHeroReason(winner, s, cols);
+  document.getElementById('dHeroS').textContent = Math.round(scores[winner]) + '%';
+
+  var scColors = {'1':'var(--a1)','2':'var(--a2)','3':'var(--a3)','4':'var(--a5)'};
+  var scNames = {'1':'Z-Score','2':'Robust','3':'Mean Norm','4':'Unit Vec'};
+  var sorted = skeys.slice().sort(function(a, b) { return scores[b] - scores[a]; });
+  var shtml = '';
+  for (var si = 0; si < sorted.length; si++) {
+    var id = sorted[si];
+    var sc = scores[id];
+    var isW = id === winner;
+    shtml += '<div class="dsc ' + (isW ? 'win' : '') + '">' +
+      '<div class="dsn" style="color:' + scColors[id] + '">' + (isW ? '[TOP] ' : '') + scNames[id] + '</div>' +
+      '<div class="dsbw"><div class="dsb" style="width:' + sc + '%;' + (isW ? 'background:var(--a3)' : 'background:' + scColors[id]) + '"></div></div>' +
+      '<div class="dsnum">' + Math.round(sc) + '<span style="font-size:12px;color:var(--muted)">/100</span></div>' +
+      '<div class="dssub">' + buildScoreSub(id, s) + '</div>' +
+    '</div>';
+  }
+  document.getElementById('diagScores').innerHTML = shtml;
+  document.getElementById('dtreeFlow').innerHTML = buildTree(s, winner);
+  document.getElementById('diagAnalysis').innerHTML = buildAnalysis(s);
+  document.getElementById('diagWhyNot').innerHTML = buildWhyNot(winner, s, scores);
+  document.getElementById('diagWrapper').classList.add('on');
+  document.getElementById('diagWrapper').scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+
+function buildScoreSub(id, s) {
+  if (id === '1') return s.outlierCount > 0 ? 'Attention: ' + s.outlierCount + ' outlier(s)' : 'Distribution adaptee';
+  if (id === '2') return s.outlierCount > 0 ? 'Protege de ' + s.outlierCount + ' outlier(s)' : 'Pas d\'outliers';
+  if (id === '3') return s.outlierCount > 1 ? 'Etendue biaisee' : 'Usage academique';
+  return 'Usage NLP / vectoriel';
+}
+
+function buildHeroReason(winner, s, cols) {
+  // FIX #27: escHtml applied to user-controlled col names to prevent XSS in innerHTML
+  var multi = cols.length > 1 ? ' <span style="color:var(--a2)">(' + cols.length + ' colonnes, analyse basee sur ' + escHtml(cols[0]) + ')</span>' : '';
+  if (winner === '1') {
+    return 'Vos donnees ont une distribution <strong>relativement symetrique</strong> (skewness = ' + s.skew.toFixed(2) + ') ' +
+      'et <strong>' + (s.outlierCount === 0 ? 'aucun outlier detecte' : s.outlierCount + ' outlier(s) seulement') + '</strong>.' +
+      ' Ce sont les conditions ideales pour le Z-Score.<br><br>' +
+      '<strong>Ce que fait le Z-Score :</strong> il soustrait la moyenne (mu = ' + s.mean.toFixed(2) + ') puis divise par l\'ecart-type' +
+      ' (sigma = ' + s.std.toFixed(2) + '). Apres transformation, vos donnees auront une moyenne de <strong>exactement 0</strong>' +
+      ' et un ecart-type de <strong>exactement 1</strong>. Tous les algorithmes ML (SVM, PCA, reseaux de neurones) pourront' +
+      ' traiter vos features sur un pied d\'egalite — aucune variable a grande echelle ne dominera les autres.<br><br>' +
+      '<strong>Pourquoi c\'est optimal ici :</strong> vos donnees sont bien comportees. Le Z-Score est la methode' +
+      ' la plus universelle et celle attendue par defaut par scikit-learn, TensorFlow et PyTorch.' + multi;
+  }
+  if (winner === '2') {
+    var outList = '';
+    var ol = s.outliers.slice(0, 3);
+    for (var i = 0; i < ol.length; i++) outList += (i > 0 ? ', ' : '') + ol[i].toFixed(1);
+    if (s.outlierCount > 3) outList += '...';
+    return 'Vos donnees contiennent <strong>' + s.outlierCount + ' valeur(s) extreme(s)</strong>' +
+      ' [' + outList + '] qui <strong>invalident l\'usage du Z-Score</strong>' +
+      ' — ces outliers tireraient la moyenne loin du centre reel et ecraserait toutes les autres valeurs.<br><br>' +
+      '<strong>Ce que fait Robust :</strong> il utilise la <strong>mediane</strong> (' + s.median.toFixed(2) + ') comme centre' +
+      ' et l\'<strong>IQR</strong> (' + s.iqr.toFixed(2) + ') comme echelle. La mediane et l\'IQR bougent tres peu' +
+      ' quand on ajoute des valeurs extremes — c\'est la definition meme de la robustesse statistique.<br><br>' +
+      '<strong>En pratique :</strong> vos outliers conserveront une valeur transformee elevee sans ecraser le reste.' +
+      ' Methode privilegiee en finance, medecine, et tout domaine avec anomalies reelles.' + multi;
+  }
+  if (winner === '3') {
+    return 'Vos donnees ont une distribution moderee (skewness = ' + s.skew.toFixed(2) + ')' +
+      ' et peu d\'outliers, ce qui permet Mean Normalization sans trop de distorsion.<br><br>' +
+      '<strong>Ce que fait Mean Norm :</strong> soustrait la moyenne (mu = ' + s.mean.toFixed(2) + '),' +
+      ' puis divise par l\'etendue (max - min = ' + (s.max - s.min).toFixed(2) + ').' +
+      ' Le resultat est approximativement borne entre -0.5 et +0.5.<br><br>' +
+      '<strong>Usage typique :</strong> recherche academique, analyses exploratoires, comparaison de variables liees.' + multi;
+  }
+  return 'Vos donnees semblent adaptees a une normalisation par norme de vecteur.' +
+    ' Recommandee pour des <strong>embeddings, du texte, ou des algorithmes de similarite cosinus</strong>.<br><br>' +
+    '<strong>Ce que fait Unit Vector :</strong> divise chaque valeur par la norme du vecteur (racine de somme xi^2),' +
+    ' ce qui force la norme totale a 1. Deux vecteurs de meme direction mais de normes differentes' +
+    ' auront des representations identiques.<br><br>' +
+    '<strong>Important :</strong> cette methode perd la magnitude — si la taille absolue compte, preferez Z-Score.' + multi;
+}
+
+function buildTree(s, winner) {
+  var steps = [];
+  var hasOut = s.outlierCount > 0;
+  var outList = '';
+  var ol = s.outliers.slice(0, 3);
+  for (var i = 0; i < ol.length; i++) outList += (i > 0 ? ', ' : '') + ol[i].toFixed(1);
+  if (s.outlierCount > 3) outList += '...';
+
+  steps.push({
+    cls: 'dq', sym: '?',
+    q: '<strong>Y a-t-il des outliers ?</strong> (methode IQR x 1.5)',
+    a: hasOut
+      ? '<span style="color:var(--a3)">OUI — ' + s.outlierCount + ' valeur(s) hors bornes : [' + outList + ']</span>'
+      : '<span style="color:var(--a4)">NON — toutes les valeurs sont dans les bornes IQR x 1.5</span>'
+  });
+
+  if (hasOut) {
+    steps.push({
+      cls: 'dy', sym: 'Y',
+      q: '<strong>Outliers detectes — Z-Score sera biaise</strong>',
+      a: 'La moyenne (' + s.mean.toFixed(2) + ') est tiree vers les extremes (vs mediane ' + s.median.toFixed(2) + ').' +
+         ' L\'ecart-type gonfle, les valeurs normales seront ecrasees pres de 0.' +
+         ' <span style="color:var(--a3)">On passe a Robust Scaler.</span>'
+    });
+    steps.push({
+      cls: 'de', sym: 'V',
+      q: '<strong>ROBUST SCALER recommande</strong>',
+      a: 'Utilise mediane (' + s.median.toFixed(2) + ') et IQR (' + s.iqr.toFixed(2) + ') — statistiques resistantes aux extremes.'
+    });
+  } else {
+    steps.push({
+      cls: 'dn', sym: 'N',
+      q: '<strong>Pas d\'outliers — Z-Score envisageable</strong>',
+      a: 'Moyenne (' + s.mean.toFixed(2) + ') et ecart-type (' + s.std.toFixed(2) + ') representent bien les donnees.'
+    });
+    steps.push({
+      cls: 'dq', sym: '?',
+      q: '<strong>Distribution symetrique ?</strong> skewness = ' + s.skew.toFixed(3),
+      a: Math.abs(s.skew) < 1
+        ? '<span style="color:var(--a3)">OUI — |skew| < 1, distribution approximativement normale.</span>'
+        : '<span style="color:var(--a4)">NON — |skew| >= 1, distribution asymetrique (queue ' + (s.skew > 0 ? 'droite' : 'gauche') + ').</span>'
+    });
+    if (Math.abs(s.skew) >= 1) {
+      steps.push({
+        cls: 'dy', sym: 'Y',
+        q: '<strong>Asymetrie forte — la moyenne est biaisee</strong>',
+        a: 'La mediane (' + s.median.toFixed(2) + ') est plus representative que la moyenne (' + s.mean.toFixed(2) + ').'
+      });
+    }
+    steps.push({
+      cls: 'dq', sym: '?',
+      q: '<strong>Objectif ML classique ou similarite cosinus (NLP) ?</strong>',
+      a: '<span style="color:var(--a3)">ML classique</span> → Z-Score.   <span style="color:var(--a4)">NLP / cosinus</span> → Unit Vector.'
+    });
+    steps.push({
+      cls: 'de', sym: 'V',
+      q: '<strong>Z-SCORE recommande</strong>',
+      a: 'Donnees propres, distribution acceptable, contexte ML general. Choix universel et le plus documente.'
+    });
+  }
+
+  var html = '';
+  for (var si = 0; si < steps.length; si++) {
+    var sp = steps[si];
+    html += '<div class="dts"><div class="dtd ' + sp.cls + '" aria-hidden="true">' + sp.sym + '</div><div class="dtc"><div class="dtq">' + sp.q + '</div><div class="dta">' + sp.a + '</div></div></div>';
+  }
+  return html;
+}
+
+function buildAnalysis(s) {
+  var skewLvl = Math.abs(s.skew) < 0.5 ? 'Symetrique' : Math.abs(s.skew) < 1 ? 'Legere asymetrie' : 'Forte asymetrie';
+  var skewCls = Math.abs(s.skew) < 0.5 ? 'tok' : Math.abs(s.skew) < 1 ? 'twarn' : 'tbad';
+  var outCls = s.outlierCount === 0 ? 'tok' : s.outlierCount <= 2 ? 'twarn' : 'tbad';
+  var kurtCls = Math.abs(s.kurt) < 1 ? 'tok' : 'twarn';
+
+  var c1 = '<div class="dac"><div class="dat or">Statistiques cles</div>' +
+    ar('N obs.', '' + s.n) +
+    ar('Moyenne (mu)', s.mean.toFixed(4)) +
+    ar('Ecart-type (sigma)', s.std.toFixed(4)) +
+    ar('Mediane', s.median.toFixed(4)) +
+    ar('Min / Max', s.min.toFixed(2) + ' / ' + s.max.toFixed(2)) +
+    ar('IQR', s.iqr.toFixed(4)) +
+    ar('Etendue (max-min)', (s.max - s.min).toFixed(4)) +
+  '</div>';
+
+  var c2 = '<div class="dac"><div class="dat bl">Forme de la distribution</div>' +
+    '<div class="as"><span class="asl">Skewness</span><span style="display:flex;align-items:center;gap:6px;"><span class="asv">' + s.skew.toFixed(3) + '</span><span class="atag ' + skewCls + '">' + skewLvl + '</span></span></div>' +
+    '<div style="font-size:10px;color:var(--muted);padding:4px 0 8px;line-height:1.6">' + explainSkew(s.skew) + '</div>' +
+    '<div class="as"><span class="asl">Kurtosis (exces)</span><span style="display:flex;align-items:center;gap:6px;"><span class="asv">' + s.kurt.toFixed(3) + '</span><span class="atag ' + kurtCls + '">' + (Math.abs(s.kurt) < 1 ? 'Normal' : 'Queues epaisses') + '</span></span></div>' +
+    '<div style="font-size:10px;color:var(--muted);padding:4px 0 8px;line-height:1.6">' + explainKurt(s.kurt) + '</div>' +
+    '<div class="as"><span class="asl">Outliers (IQR x1.5)</span><span style="display:flex;align-items:center;gap:6px;"><span class="asv">' + s.outlierCount + '</span><span class="atag ' + outCls + '">' + (s.outlierCount === 0 ? 'Aucun' : s.outlierCount <= 2 ? 'Peu' : 'Nombreux') + '</span></span></div>' +
+    '<div style="font-size:10px;color:var(--muted);padding:4px 0 8px;line-height:1.6">' + explainOutliers(s) + '</div>' +
+    '<div class="as"><span class="asl">Valeurs negatives</span><span class="atag ' + (s.min < 0 ? 'twarn' : 'tok') + '">' + (s.min < 0 ? 'Oui' : 'Non') + '</span></div>' +
+    '<div style="font-size:10px;color:var(--muted);padding:4px 0;line-height:1.6">' + (s.min < 0 ? 'Valeurs negatives presentes. Unit Vector L2 peut etre peu intuitif.' : 'Toutes les valeurs sont positives — compatible avec toutes les methodes.') + '</div>' +
+  '</div>';
+
+  var c3 = '<div class="dac"><div class="dat pi">Signaux d\'alerte</div>' + buildAlerts(s) + '</div>';
+  var c4 = '<div class="dac"><div class="dat pu">Contexte d\'utilisation</div>' + buildContext(s) + '</div>';
+
+  return c1 + c2 + c3 + c4;
+}
+
+function ar(label, val) {
+  return '<div class="as"><span class="asl">' + escHtml(label) + '</span><span class="asv">' + escHtml(val) + '</span></div>';
+}
+
+function explainSkew(skew) {
+  if (Math.abs(skew) < 0.5) return 'Skewness proche de 0 : distribution symetrique. La moyenne est un bon representant du centre. Condition ideale pour Z-Score.';
+  if (Math.abs(skew) < 1) return 'Legere asymetrie : la moyenne est legerement tiree vers la queue. Z-Score reste valide mais surveillez les outliers.';
+  if (skew > 0) return 'Forte asymetrie POSITIVE (queue droite) : grandes valeurs tirent la moyenne vers le haut. La mediane est plus representative. Robust Scaler conseille.';
+  return 'Forte asymetrie NEGATIVE (queue gauche) : petites valeurs tirent la moyenne vers le bas. La mediane est plus representative. Robust Scaler conseille.';
+}
+
+function explainKurt(kurt) {
+  if (Math.abs(kurt) < 1) return 'Kurtosis normal : les queues de distribution ont une epaisseur standard, comparable a une loi normale.';
+  if (kurt > 1) return 'Kurtosis eleve (leptokurtique) : queues epaisses, plus d\'extremes que la normale. Augmente le risque d\'outliers. Pensez a Robust Scaler.';
+  return 'Kurtosis negatif (platykurtique) : queues fines, distribution plus aplatie. Moins de risque d\'extremes.';
+}
+
+function explainOutliers(s) {
+  if (s.outlierCount === 0) return 'Aucun outlier detecte. Moyenne et ecart-type ne sont pas biaises. Z-Score est fiable.';
+  var ol = s.outliers.slice(0, 4);
+  var list = '';
+  for (var i = 0; i < ol.length; i++) list += (i > 0 ? ', ' : '') + ol[i].toFixed(1);
+  if (s.outlierCount > 4) list += '...';
+  return s.outlierCount + ' valeur(s) hors bornes [' + list + ']. Ces valeurs biaisent la moyenne (' + s.mean.toFixed(2) + ') et gonflent l\'ecart-type (' + s.std.toFixed(2) + '). Apres Z-Score, les valeurs normales seraient ecrasees pres de 0. Robust Scaler protege contre cet effet.';
+}
+
+function buildAlerts(s) {
+  var html = '';
+  if (s.outlierCount > 0) {
+    html += '<div style="background:rgba(255,60,120,.07);border:1px solid rgba(255,60,120,.2);padding:10px;margin-bottom:10px;">' +
+      '<div style="color:var(--a1);font-size:10px;font-weight:700;margin-bottom:4px;">OUTLIERS DETECTES (' + s.outlierCount + ')</div>' +
+      '<div style="font-size:10px;color:var(--muted);line-height:1.7">Z-Score calculerait z = (x - ' + s.mean.toFixed(1) + ') / ' + s.std.toFixed(1) + '.' +
+      ' Les outliers font gonfler l\'ecart-type, compressant toutes les valeurs normales dans une plage etroite.' +
+      ' Robust utilise mediane/IQR, insensibles aux extremes : z_rob = (x - ' + s.median.toFixed(1) + ') / ' + s.iqr.toFixed(1) + '.</div></div>';
+  }
+  if (Math.abs(s.skew) > 1) {
+    html += '<div style="background:rgba(255,157,0,.07);border:1px solid rgba(255,157,0,.2);padding:10px;margin-bottom:10px;">' +
+      '<div style="color:var(--a4);font-size:10px;font-weight:700;margin-bottom:4px;">ASYMETRIE FORTE (skew = ' + s.skew.toFixed(2) + ')</div>' +
+      '<div style="font-size:10px;color:var(--muted);line-height:1.7">Distribution asymetrique. Mediane (' + s.median.toFixed(2) + ') plus stable que moyenne (' + s.mean.toFixed(2) + '). Transformation log ou Robust Scaler conseilles.</div></div>';
+  }
+  if (s.std === 0) {
+    html += '<div style="background:rgba(255,60,120,.1);border:1px solid rgba(255,60,120,.3);padding:10px;margin-bottom:10px;">' +
+      '<div style="color:var(--a1);font-size:10px;font-weight:700;">VARIANCE NULLE</div>' +
+      '<div style="font-size:10px;color:var(--muted);">Toutes les valeurs sont identiques. La standardisation est impossible (division par zero).</div></div>';
+  }
+  if (s.n < 10) {
+    html += '<div style="background:rgba(255,157,0,.07);border:1px solid rgba(255,157,0,.2);padding:10px;margin-bottom:10px;">' +
+      '<div style="color:var(--a4);font-size:10px;font-weight:700;margin-bottom:4px;">PETIT ECHANTILLON (n = ' + s.n + ')</div>' +
+      '<div style="font-size:10px;color:var(--muted);line-height:1.7">Peu d\'observations : statistiques peu stables. Les resultats doivent etre interpretes avec precaution.</div></div>';
+  }
+  if (!html) {
+    html = '<div style="background:rgba(170,255,0,.07);border:1px solid rgba(170,255,0,.2);padding:10px;">' +
+      '<div style="color:var(--a3);font-size:10px;font-weight:700;margin-bottom:4px;">DONNEES PROPRES</div>' +
+      '<div style="font-size:10px;color:var(--muted);line-height:1.7">Aucun signal d\'alerte. Distribution symetrique, pas d\'outliers, variance non nulle. Z-Score est optimal.</div></div>';
+  }
+  return html;
+}
+
+function buildContext(s) {
+  return '<div style="font-size:10px;color:var(--muted);line-height:1.8;">' +
+    '<div style="margin-bottom:8px;"><span style="color:var(--a2)">ML classique (SVM, regression, reseaux) :</span><br>' +
+    (s.outlierCount === 0 ? 'Z-Score recommande. Gradient-descent beneficie de mu=0, sigma=1.' : 'Robust Scaler. Les outliers biaisent le gradient si on utilise Z-Score.') + '</div>' +
+    '<div style="margin-bottom:8px;"><span style="color:var(--a2)">PCA / reduction dimensionnelle :</span><br>' +
+    (s.outlierCount === 0 ? 'Z-Score optimal. PCA suppose une variance comparable entre features.' : 'Robust puis verifier les composantes pour detecter l\'influence des outliers.') + '</div>' +
+    '<div style="margin-bottom:8px;"><span style="color:var(--a2)">NLP / similarite cosinus :</span><br>Unit Vector L2 independamment des outliers. La direction prime sur la magnitude.</div>' +
+    '<div><span style="color:var(--a2)">Recherche / publication :</span><br>Z-Score si distribution normale, Robust si asymetrie ou outliers. Toujours signaler la methode choisie.</div>' +
+  '</div>';
+}
+
+function buildWhyNot(winner, s, scores) {
+  var all = [];
+  var allIds = ['1', '2', '3', '4'];
+  for (var i = 0; i < allIds.length; i++) if (allIds[i] !== winner) all.push(allIds[i]);
+  var names = {'1':'Z-Score','2':'Robust Scaler','3':'Mean Norm','4':'Unit Vector'};
+  var colors = {'1':'var(--a1)','2':'var(--a2)','3':'var(--a3)','4':'var(--a5)'};
+
+  function getReason(id) {
+    if (id === '1') {
+      if (s.outlierCount > 0) {
+        return 'Z-Score utilise <strong>moyenne et ecart-type</strong>, tous deux tres sensibles aux extremes.' +
+          ' Vos ' + s.outlierCount + ' outlier(s) tirent la moyenne (actuellement ' + s.mean.toFixed(2) + ') loin du centre reel' +
+          ' et gonflent l\'ecart-type (' + s.std.toFixed(2) + '). Resultat : vos valeurs normales seraient ecrasees' +
+          ' dans une plage etroite autour de 0. La formule z = (x - ' + s.mean.toFixed(1) + ') / ' + s.std.toFixed(1) + ' est distordue.';
+      }
+      return 'Z-Score serait egalement valide ici (score ' + Math.round(scores['1']) + '/100). Il n\'est pas choisi car une autre methode s\'adapte mieux a cette configuration.';
+    }
+    if (id === '2') {
+      if (s.outlierCount === 0) {
+        return 'Robust Scaler est concu pour proteger contre les outliers. Sans outliers, utiliser mediane et IQR' +
+          ' au lieu de moyenne et ecart-type n\'apporte rien.' +
+          ' Quand la distribution est normale, l\'estimateur ecart-type est statistiquement plus efficace que l\'IQR.';
+      }
+      return 'Robust Scaler est aussi adapte (score ' + Math.round(scores['2']) + '/100) mais une autre methode score mieux pour cette configuration.';
+    }
+    if (id === '3') {
+      return 'Mean Normalization divise par l\'etendue (max - min = ' + (s.max - s.min).toFixed(2) + ').' +
+        ' Si un seul outlier deplace le max ou min, toute la mise a l\'echelle est biaisee.' +
+        ' De plus, le resultat n\'a pas de propriete statistique aussi utile que mu=0 sigma=1.' +
+        ' Methode principalement academique, rarement utilisee en production ML. Score : ' + Math.round(scores['3']) + '/100.';
+    }
+    return 'Unit Vector normalise la norme geometrique, pas les proprietes statistiques.' +
+      ' Pertinent en NLP (similarite cosinus) ou deep learning (embeddings).' +
+      ' Pour des donnees tabulaires classiques, cette methode fait perdre la magnitude absolue,' +
+      ' generalement importante dans les modeles ML. Score : ' + Math.round(scores['4']) + '/100.';
+  }
+
+  var html = '';
+  for (var wi = 0; wi < all.length; wi++) {
+    var id = all[wi];
+    html += '<div class="wnc"><div class="wnn" style="color:' + colors[id] + '">&#x2717; ' + names[id] + ' (' + Math.round(scores[id]) + '/100)</div><div class="wnr">' + getReason(id) + '</div></div>';
+  }
+  return html;
+}
+
+function closeDiag() {
+  document.getElementById('diagWrapper').classList.remove('on');
+}
+
+function applyDiagnostic() {
+  var cards = document.querySelectorAll('.mc');
+  for (var i = 0; i < cards.length; i++) {
+    cards[i].classList.remove('sel');
+    cards[i].setAttribute('aria-checked', 'false');
+  }
+  var idx = parseInt(DR) - 1;
+  if (cards[idx]) {
+    cards[idx].classList.add('sel');
+    cards[idx].setAttribute('aria-checked', 'true');
+    SM = DR;
+    if (SM === '4') document.getElementById('normSel').classList.add('v');
+    else document.getElementById('normSel').classList.remove('v');
+  }
+  closeDiag();
+  compute();
+}
+
+/* ── STATS TABLE ───────────────────────────────────────────────────── */
+function buildStatsTable(colsData, isBefore) {
+  var cols = Object.keys(colsData);
+  if (!cols.length) return '';
+  var color = isBefore ? 'var(--a4)' : 'var(--a3)';
+  var metrics = ['n','Moyenne','Ecart-type','Mediane','Min','Max','IQR'];
+  var sm = {};
+  for (var ci = 0; ci < cols.length; ci++) sm[cols[ci]] = st(colsData[cols[ci]]);
+  // FIX #28: thead/tbody properly added; th[scope] for accessibility
+  var h = '<thead><tr><th scope="col">Stat</th>';
+  for (var hi = 0; hi < cols.length; hi++) h += '<th scope="col" style="color:' + color + '">' + escHtml(cols[hi]) + '</th>';
+  h += '</tr></thead><tbody>';
+  for (var mi = 0; mi < metrics.length; mi++) {
+    var m = metrics[mi];
+    h += '<tr><td style="color:var(--muted);font-size:9px;text-transform:uppercase;">' + escHtml(m) + '</td>';
+    for (var vi = 0; vi < cols.length; vi++) {
+      var s2 = sm[cols[vi]];
+      var val;
+      switch(m) {
+        case 'n': val = s2.n; break;
+        case 'Moyenne': val = s2.mean.toFixed(4); break;
+        case 'Ecart-type': val = s2.std.toFixed(4); break;
+        case 'Mediane': val = s2.median.toFixed(4); break;
+        case 'Min': val = s2.min.toFixed(4); break;
+        case 'Max': val = s2.max.toFixed(4); break;
+        default: val = s2.iqr.toFixed(4);
+      }
+      h += '<td>' + val + '</td>';
+    }
+    h += '</tr>';
+  }
+  return h + '</tbody>';
+}
+
+/* ── CHARTS ─────────────────────────────────────────────────────────── */
+function destroyCharts() {
+  for (var i = 0; i < CH.length; i++) CH[i].destroy();
+  CH = [];
+}
+
+function histo(arr, bins) {
+  if (!bins) bins = 7;
+  var mn = arr[0], mx = arr[0];
+  for (var i = 1; i < arr.length; i++) { if (arr[i] < mn) mn = arr[i]; if (arr[i] > mx) mx = arr[i]; }
+  var w = (mx - mn) / bins || 1;
+  var counts = [], labels = [];
+  for (var j = 0; j < bins; j++) { counts.push(0); labels.push((mn + j * w).toFixed(2)); }
+  for (var k = 0; k < arr.length; k++) {
+    var b = Math.floor((arr[k] - mn) / w);
+    if (b >= bins) b = bins - 1;
+    if (b < 0) b = 0;
+    counts[b]++;
+  }
+  return {labels: labels, counts: counts};
+}
+
+function makeChart(id, arr, color) {
+  // FIX #29: guard — if canvas element doesn't exist yet, skip silently
+  var canvas = document.getElementById(id);
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var hd = histo(arr);
+  var c = new Chart(ctx, {
+    type: 'bar',
+    data: {labels: hd.labels, datasets: [{data: hd.counts, backgroundColor: color + '50', borderColor: color, borderWidth: 1.5, borderRadius: 2}]},
+    options: {
+      responsive: true,
+      plugins: {legend: {display: false}},
+      scales: {
+        x: {ticks: {color: '#6b6b8a', font: {family: 'Space Mono', size: 8}, maxTicksLimit: 5}, grid: {color: 'rgba(255,255,255,.04)'}},
+        y: {ticks: {color: '#6b6b8a', font: {family: 'Space Mono', size: 8}}, grid: {color: 'rgba(255,255,255,.04)'}}
+      }
+    }
+  });
+  CH.push(c);
+}
+
+/* ── COMPUTE ─────────────────────────────────────────────────────────── */
+function compute() {
+  if (!Object.keys(TD).length) { alert('Veuillez charger des donnees.'); return; }
+  var cols = [];
+  for (var ci = 0; ci < SC.length; ci++) if (TD[SC[ci]]) cols.push(SC[ci]);
+  if (!cols.length) { alert('Selectionnez au moins une colonne.'); return; }
+
+  var btn = document.getElementById('runBtn');
+  btn.textContent = 'CALCUL...';
+  // FIX #30: disable button during async compute to prevent double-click race condition
+  btn.disabled = true;
+
+  setTimeout(function() {
+    var orig = {}, trans = {};
+    for (var i = 0; i < cols.length; i++) {
+      orig[cols[i]] = TD[cols[i]];
+      trans[cols[i]] = applyMethod(TD[cols[i]]);
+    }
+
+    document.getElementById('mBadge').textContent = MN[SM];
+    document.getElementById('aBadge').textContent = SA.toUpperCase();
+    document.getElementById('colsBadge').textContent = cols.length + ' colonne' + (cols.length > 1 ? 's' : '');
+    document.getElementById('tBefore').innerHTML = buildStatsTable(orig, true);
+    document.getElementById('tAfter').innerHTML = buildStatsTable(trans, false);
+
+    var vrow = document.getElementById('verif');
+    vrow.innerHTML = '';
+    for (var vi = 0; vi < cols.length; vi++) {
+      var c = cols[vi];
+      var sv = st(trans[c]);
+      if (SM === '1') {
+        var d1 = document.createElement('div');
+        d1.className = 'vb' + (Math.abs(sv.mean) < 1e-8 ? '' : ' w');
+        d1.textContent = c + ': mu=0 ' + (Math.abs(sv.mean) < 1e-8 ? 'OK' : '~');
+        vrow.appendChild(d1);
+        var d2 = document.createElement('div');
+        d2.className = 'vb' + (Math.abs(sv.std - 1) < 0.01 ? '' : ' w');
+        d2.textContent = c + ': sigma=1 ' + (Math.abs(sv.std - 1) < 0.01 ? 'OK' : '~');
+        vrow.appendChild(d2);
+      } else if (SM === '4') {
+        var nm = 0;
+        for (var ni = 0; ni < trans[c].length; ni++) nm += trans[c][ni] * trans[c][ni];
+        nm = Math.sqrt(nm);
+        var d3 = document.createElement('div');
+        d3.className = 'vb i';
+        d3.textContent = c + ': ||X||=' + nm.toFixed(4);
+        vrow.appendChild(d3);
+      }
+    }
+    var dn = document.createElement('div');
+    dn.className = 'vb i';
+    dn.textContent = 'n = ' + cols.map(function(c2) { return TD[c2].length; }).join('/');
+    vrow.appendChild(dn);
+
+    var fp = document.getElementById('fullTablePanel');
+    if (cols.length > 1) {
+      fp.style.display = 'block';
+      var maxN = 0;
+      for (var mi2 = 0; mi2 < cols.length; mi2++) if (TD[cols[mi2]].length > maxN) maxN = TD[cols[mi2]].length;
+      // FIX #31: results table thead/tbody separated; th[scope] added
+      var th = '<thead><tr><th scope="col">#</th>';
+      for (var ti = 0; ti < cols.length; ti++) {
+        th += '<th scope="col" class="orig">' + escHtml(cols[ti]) + ' (orig.)</th>';
+        th += '<th scope="col" class="transf">' + escHtml(cols[ti]) + ' (std.)</th>';
+      }
+      th += '</tr></thead><tbody>';
+      for (var ri = 0; ri < maxN; ri++) {
+        th += '<tr><td class="orig">' + (ri + 1) + '</td>';
+        for (var tci = 0; tci < cols.length; tci++) {
+          var ov = orig[cols[tci]][ri], tv = trans[cols[tci]][ri];
+          th += '<td class="orig">' + (ov !== undefined ? ov.toFixed(4) : '-') + '</td>';
+          th += '<td class="transf">' + (tv !== undefined ? tv.toFixed(4) : '-') + '</td>';
+        }
+        th += '</tr>';
+      }
+      th += '</tbody>';
+      document.getElementById('resTable').innerHTML = th;
+    } else {
+      fp.style.display = 'none';
+    }
+
+    destroyCharts();
+    var colors = ['#ff9d00','#00e5ff','#aaff00','#ff3c78','#bf80ff'];
+    var cg = document.getElementById('chartsGrid');
+    cg.innerHTML = '';
+    for (var chi = 0; chi < cols.length; chi++) {
+      var col = colors[chi % colors.length];
+      // FIX #32: canvas needs explicit height attribute to prevent Chart.js rendering bug on resize
+      cg.innerHTML += '<div class="cc"><div class="ctitle">' + escHtml(cols[chi]) + ' - Avant</div><canvas id="ch_b_' + chi + '" height="160"></canvas></div>' +
+        '<div class="cc"><div class="ctitle">' + escHtml(cols[chi]) + ' - Apres</div><canvas id="ch_a_' + chi + '" height="160"></canvas></div>';
+    }
+    // FIX #33: capture cols snapshot in closure to avoid stale reference in timeout
+    (function(colsSnap, origSnap, transSnap, colorsSnap) {
+      setTimeout(function() {
+        for (var cmi = 0; cmi < colsSnap.length; cmi++) {
+          makeChart('ch_b_' + cmi, origSnap[colsSnap[cmi]], colorsSnap[cmi % colorsSnap.length]);
+          makeChart('ch_a_' + cmi, transSnap[colsSnap[cmi]], '#aaff00');
+        }
+      }, 50);
+    })(cols.slice(), orig, trans, colors.slice());
+
+    var info = MI[SM];
+    var ucHtml = '', prosHtml = '', consHtml = '';
+    for (var iu = 0; iu < info.uc.length; iu++) ucHtml += '<li>' + escHtml(info.uc[iu]) + '</li>';
+    for (var ip = 0; ip < info.pros.length; ip++) prosHtml += '<li>' + escHtml(info.pros[ip]) + '</li>';
+    for (var ico = 0; ico < info.cons.length; ico++) consHtml += '<li>' + escHtml(info.cons[ico]) + '</li>';
+    document.getElementById('infoGrid').innerHTML =
+      '<div class="ibox"><div class="ititle b">Cas d\'utilisation</div><ul class="ilist">' + ucHtml + '</ul></div>' +
+      '<div class="ibox"><div class="ititle g">Avantages</div><ul class="ilist">' + prosHtml + '</ul></div>' +
+      '<div class="ibox"><div class="ititle r">Inconvenients</div><ul class="ilist">' + consHtml + '</ul></div>';
+
+    document.getElementById('compareArea').style.display = 'none';
+    document.getElementById('results').classList.add('on');
+    document.getElementById('results').scrollIntoView({behavior: 'smooth', block: 'start'});
+    btn.textContent = 'EXECUTER';
+    btn.disabled = false;
+  }, 250);
+}
+
+/* ── COMPARE ALL ─────────────────────────────────────────────────────── */
+function compareAll() {
+  var cols = [];
+  for (var i = 0; i < SC.length; i++) if (TD[SC[i]]) cols.push(SC[i]);
+  if (!cols.length) { alert('Chargez des donnees d\'abord.'); return; }
+  var arr = TD[cols[0]];
+  // FIX #34: compareAll methods — using named functions avoids closure-over-loop variable bugs
+  function makeMethod(fn, name, col) { return {name:name, fn:fn, col:col}; }
+  var methods = [
+    makeMethod(function() { return zScore(arr); }, 'Z-Score', '#00e5ff'),
+    makeMethod(function() { return robust(arr); }, 'Robust', '#ff9d00'),
+    makeMethod(function() { return meanNorm(arr); }, 'Mean Norm', '#aaff00'),
+    makeMethod(function() { return unitVec(arr, 'l2'); }, 'Unit Vec L2', '#bf80ff'),
+    makeMethod(function() { return unitVec(arr, 'l1'); }, 'Unit Vec L1', '#ff3c78')
+  ];
+  var html = '';
+  for (var mi = 0; mi < methods.length; mi++) {
+    var m = methods[mi];
+    var t = m.fn();
+    var s = st(t);
+    html += '<div class="cmpc" style="border-color:' + m.col + '33">' +
+      '<div class="cmpt" style="color:' + m.col + '">' + escHtml(m.name) + '</div>' +
+      '<div class="cmpv" style="color:' + m.col + '">[' + s.min.toFixed(2) + ', ' + s.max.toFixed(2) + ']</div>' +
+      '<div class="cmps">mu=' + s.mean.toFixed(3) + ' sigma=' + s.std.toFixed(3) + '</div>' +
+      '<div class="cmps" style="color:' + m.col + ';margin-top:3px;">x0=' + t[0].toFixed(4) + '</div>' +
+    '</div>';
+  }
+  document.getElementById('compareGrid').innerHTML = html;
+  document.getElementById('compareArea').style.display = 'block';
+  document.getElementById('results').classList.add('on');
+  document.getElementById('compareArea').scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+
+/* ── EXPORT ──────────────────────────────────────────────────────────── */
+function exportCSV() {
+  var cols = [];
+  for (var i = 0; i < SC.length; i++) if (TD[SC[i]]) cols.push(SC[i]);
+  var trans = {};
+  for (var ci = 0; ci < cols.length; ci++) trans[cols[ci]] = applyMethod(TD[cols[ci]]);
+  var maxN = 0;
+  for (var mi = 0; mi < cols.length; mi++) if (TD[cols[mi]].length > maxN) maxN = TD[cols[mi]].length;
+  var header = [];
+  for (var hi = 0; hi < cols.length; hi++) { header.push(cols[hi] + '_orig'); header.push(cols[hi] + '_std'); }
+  var csv = header.join(',') + '\n';
+  for (var ri = 0; ri < maxN; ri++) {
+    var row = [];
+    for (var rci = 0; rci < cols.length; rci++) {
+      var ov = TD[cols[rci]][ri];
+      var tv = trans[cols[rci]][ri];
+      row.push(ov !== undefined ? ov : '');
+      row.push(tv !== undefined ? tv.toFixed(6) : '');
+    }
+    csv += row.join(',') + '\n';
+  }
+  // FIX #35: added BOM for proper Excel UTF-8 handling on Windows
+  var bom = '\uFEFF';
+  var a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(bom + csv);
+  a.download = 'standardisation_' + MN[SM].toLowerCase().replace(/\s/g, '_') + '.csv';
+  // FIX #36: append/remove anchor from DOM for Firefox compatibility (Firefox ignores click() on detached elements)
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// FIX #37: Chart.js defer — initialise only after DOM + scripts are ready
+// The defer attribute on the <script> tag means Chart.js may not be loaded
+// by the time the inline script runs. We use DOMContentLoaded + a poll to be safe.
+function initApp() {
+  if (typeof Chart === 'undefined') {
+    setTimeout(initApp, 50);
+    return;
+  }
+  parseListInput();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
+</script>
+</body>
+</html>
